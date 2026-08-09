@@ -16,7 +16,7 @@ class MataPelajaranAktifController extends Controller
 
     public function index(MataPelajaranAktifDataTable $dataTable)
     {
-        $tahunAjarans = TahunAjaran::orderBy('nama_tahun_ajaran', 'desc')->get();
+        $tahunAjarans = TahunAjaran::orderBy('tahun_mulai', 'desc')->get();
         $gurus = Guru::with('pegawai')->get();
         $kelas = Kelas::orderBy('nama_kelas', 'asc')->get();
 

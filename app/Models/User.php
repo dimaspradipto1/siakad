@@ -87,7 +87,9 @@ class User extends Authenticatable
             $guru = Guru::where('pegawai_id', $this->pegawai_id)->first();
         }
         if (!$guru) {
-            $guru = Guru::where('user_id', $this->id)->first();
+            $guru = Guru::whereHas('pegawai', function($q) {
+                $q->where('user_id', $this->id);
+            })->first();
         }
         if (!$guru) {
             $pegawai = Pegawai::where('user_id', $this->id)->first();

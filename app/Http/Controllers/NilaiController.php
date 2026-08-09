@@ -236,7 +236,9 @@ class NilaiController extends Controller
             $guru = Guru::where('pegawai_id', $user->pegawai_id)->first();
         }
         if (!$guru) {
-            $guru = Guru::where('user_id', $user->id)->first();
+            $guru = Guru::whereHas('pegawai', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->first();
         }
         if (!$guru) {
             $pegawai = Pegawai::where('user_id', $user->id)->first();
@@ -305,7 +307,9 @@ class NilaiController extends Controller
             $guru = Guru::where('pegawai_id', $user->pegawai_id)->first();
         }
         if (!$guru) {
-            $guru = Guru::where('user_id', $user->id)->first();
+            $guru = Guru::whereHas('pegawai', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->first();
         }
         if (!$guru) {
             $pegawai = Pegawai::where('user_id', $user->id)->first();
