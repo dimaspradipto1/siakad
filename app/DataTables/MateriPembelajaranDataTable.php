@@ -74,7 +74,22 @@ class MateriPembelajaranDataTable extends DataTable
 
                 return '<div class="d-flex justify-content-center align-items-center">' . $buttons . '</div>';
             })
-            ->rawColumns(['action'])
+            ->filterColumn('tahun_ajaran', function($query, $keyword) {
+                $query->whereHas('tahunAjaran', fn($q) => $q->where('tahun_mulai', 'like', "%{$keyword}%")->orWhere('tahun_selesai', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('semester', function($query, $keyword) {
+                $query->whereHas('semester', fn($q) => $q->where('nama_semester', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('kelas', function($query, $keyword) {
+                $query->whereHas('kelas', fn($q) => $q->where('nama_kelas', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('mata_pelajaran', function($query, $keyword) {
+                $query->whereHas('mataPelajaran', fn($q) => $q->where('nama_mata_pelajaran', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('diupload_oleh', function($query, $keyword) {
+                $query->whereHas('uploader', fn($q) => $q->where('name', 'like', "%{$keyword}%"));
+            })
+            ->rawColumns(['action', 'file'])
             ->setRowId('id');
     }
 

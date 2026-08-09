@@ -56,6 +56,24 @@ class PembagianKelasDataTable extends DataTable
                 </div>
                 ';
             })
+            ->filterColumn('nisn', function($query, $keyword) {
+                $query->whereHas('siswa', fn($q) => $q->where('nisn', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('nama_siswa', function($query, $keyword) {
+                $query->whereHas('siswa', fn($q) => $q->where('nama_siswa', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('tahun_ajaran', function($query, $keyword) {
+                $query->whereHas('tahunAjaran', fn($q) => $q->where('nama_tahun_ajaran', 'like', "%{$keyword}%")->orWhere('tahun_mulai', 'like', "%{$keyword}%")->orWhere('tahun_selesai', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('tingkat', function($query, $keyword) {
+                $query->whereHas('kelas', fn($q) => $q->where('tingkat', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('nama_kelas', function($query, $keyword) {
+                $query->whereHas('kelas', fn($q) => $q->where('nama_kelas', 'like', "%{$keyword}%"));
+            })
+            ->filterColumn('wali_kelas', function($query, $keyword) {
+                $query->whereHas('kelas.waliKelas.guru.pegawai', fn($q) => $q->where('nama_pegawai', 'like', "%{$keyword}%"));
+            })
             ->rawColumns(['action'])
             ->setRowId('id');
     }

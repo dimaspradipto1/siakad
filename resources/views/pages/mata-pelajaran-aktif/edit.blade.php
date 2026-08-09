@@ -58,9 +58,9 @@
                                     <label for="semester_id" class="form-label fw-medium text-secondary">Semester</label>
                                     <select id="semester_id" name="semester_id" 
                                         class="form-select rounded-3 @error('semester_id') is-invalid @enderror" required>
-                                        <option value="" disabled></option>
+                                        <option value="" disabled>-- Pilih Semester --</option>
                                         @foreach($semesters as $s)
-                                            <option value="{{ $s->id }}" {{ old('semester_id', $matapelajaran->semester_id) == $s->id ? 'selected' : '' }}>
+                                            <option value="{{ $s->id }}" data-tahun-ajaran="{{ $s->tahun_ajaran_id }}" {{ old('semester_id', $matapelajaran->semester_id) == $s->id ? 'selected' : '' }}>
                                                 {{ $s->nama_semester }}
                                             </option>
                                         @endforeach
@@ -151,6 +151,33 @@
 
 @push('script')
     <script>
+        $(document).ready(function() {
+            function filterSemesters() {
+                var selectedTaId = $('#tahun_ajaran_id').val();
+                $('#semester_id option').each(function() {
+                    var taId = $(this).attr('data-tahun-ajaran');
+                    if (!taId) return;
+                    if (selectedTaId && taId == selectedTaId) {
+                        $(this).show().prop('disabled', false);
+                    } else {
+                        $(this).hide().prop('disabled', true);
+                    }
+                });
+
+                var selectedOpt = $('#semester_id option:selected');
+                if (selectedOpt.length && selectedOpt.is(':disabled')) {
+                    var firstValid = $('#semester_id option:not(:disabled):first').val();
+                    $('#semester_id').val(firstValid || '');
+                }
+            }
+
+            $('#tahun_ajaran_id').on('change', function() {
+                filterSemesters();
+            });
+
+            filterSemesters();
+        });
+
         @if ($errors->any())
             Swal.fire({
                 icon: 'error',

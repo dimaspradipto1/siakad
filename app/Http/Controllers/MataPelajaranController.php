@@ -127,9 +127,52 @@ class MataPelajaranController extends Controller
         return redirect()->route('matapelajaran.index');
     }
 
+    private function getWaliKelasIds($user): array
+    {
+        if (!$user) return [];
+
+        $guru = $user->pegawai?->guru ?? $user->guru;
+        if (!$guru && $user->pegawai_id) {
+            $guru = \App\Models\Guru::where('pegawai_id', $user->pegawai_id)->first();
+        }
+        if (!$guru) {
+            $guru = \App\Models\Guru::where('user_id', $user->id)->first();
+        }
+        if (!$guru) {
+            $pegawai = \App\Models\Pegawai::where('user_id', $user->id)->first();
+            if (!$pegawai) {
+                $nameBase = trim(explode(',', $user->name)[0]);
+                $pegawai = \App\Models\Pegawai::where('nama_pegawai', 'like', '%' . $nameBase . '%')->first();
+            }
+            if ($pegawai) {
+                $guru = \App\Models\Guru::where('pegawai_id', $pegawai->id)->first();
+            }
+        }
+
+        if ($guru) {
+            $ids = \App\Models\WaliKelas::where('guru_id', $guru->id)->pluck('kelas_id')->toArray();
+            if (!empty($ids)) {
+                return array_unique(array_filter($ids));
+            }
+        }
+
+        $nameBase = trim(explode(',', $user->name)[0]);
+        $matchingWali = \App\Models\WaliKelas::whereHas('guru.pegawai', function($q) use ($nameBase) {
+            $q->where('nama_pegawai', 'like', '%' . $nameBase . '%');
+        })->pluck('kelas_id')->toArray();
+
+        if (!empty($matchingWali)) {
+            return array_unique(array_filter($matchingWali));
+        }
+
+        return [];
+    }
+
     public function jadwal(Request $request)
     {
         $user = auth()->user();
+        $activeRole = $user?->activeRole() ?? $user?->roles;
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
         $isPersonal = $user && in_array($user->roles, ['siswa', 'orang tua']);
         $mySiswa = null;
 
@@ -163,6 +206,15 @@ class MataPelajaranController extends Controller
                 ->first();
             $selectedKelas = $pk ? $pk->kelas_id : $mySiswa->kelas_id;
             $kelas = Kelas::query()->where('id', $selectedKelas)->get();
+        } elseif ($isWali) {
+            $waliKelasIds = $this->getWaliKelasIds($user);
+            $kelas = !empty($waliKelasIds)
+                ? Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
+                : collect();
+            $selectedKelas = $request->get('kelas_id');
+            if (!$selectedKelas || (!empty($waliKelasIds) && !in_array($selectedKelas, $waliKelasIds))) {
+                $selectedKelas = $kelas->first()?->id;
+            }
         } else {
             $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
             $selectedKelas = $request->get('kelas_id');

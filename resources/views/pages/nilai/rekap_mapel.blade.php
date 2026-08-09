@@ -83,23 +83,28 @@
                     <div class="card-body pt-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h5 class="card-title text-dark fw-bold p-0 mb-0">Daftar Nilai Siswa</h5>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Cetak Rekap</button>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('nilai.rekap-mapel.export', ['tahun_ajaran_id' => $selectedTa, 'semester_name' => $selectedSemName, 'kelas_id' => $selectedKelas, 'mata_pelajaran_id' => $selectedMapel]) }}" class="btn btn-success btn-sm rounded-3 fw-bold" title="Export Excel Rekap Mapel">
+                                    <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+                                </a>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Cetak Rekap</button>
+                            </div>
                         </div>
 
                         @if(count($students) > 0)
                         <div class="table-responsive">
-                            <table class="table align-middle text-center table-borderless table-striped">
-                                <thead style="border-bottom: 2px solid #dee2e6;">
-                                    <tr class="text-dark fw-bold" style="font-size: 1rem;">
-                                        <th style="padding: 12px 16px;">NISN</th>
-                                        <th class="text-start" style="padding: 12px 16px;">Nama Siswa</th>
-                                        <th style="padding: 12px 16px;">Nilai Harian</th>
-                                        <th style="padding: 12px 16px;">Nilai MID+</th>
-                                        <th style="padding: 12px 16px;">Nilai PAS+</th>
-                                        <th style="padding: 12px 16px;">Nilai Rata2</th>
-                                        <th style="padding: 12px 16px;">Nilai Raport</th>
-                                        <th style="padding: 12px 16px;">TP Optimal</th>
-                                        <th style="padding: 12px 16px;">TP Yang Perlu Peningkatan</th>
+                            <table class="table align-middle text-center table-bordered table-hover" id="rekap-mapel-table" style="width:100%">
+                                <thead class="table-light fw-bold text-dark">
+                                    <tr>
+                                        <th>NISN</th>
+                                        <th class="text-start">Nama Siswa</th>
+                                        <th>Nilai Harian</th>
+                                        <th>Nilai MID+</th>
+                                        <th>Nilai PAS+</th>
+                                        <th>Nilai Rata2</th>
+                                        <th>Nilai Raport</th>
+                                        <th class="text-start">TP Optimal</th>
+                                        <th class="text-start">TP Yang Perlu Peningkatan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -120,16 +125,16 @@
                                                 }
                                             }
                                         @endphp
-                                        <tr style="border-bottom: 1px solid #f2f2f2;">
-                                            <td class="text-dark" style="padding: 14px 16px;">{{ $siswa->nisn }}</td>
-                                            <td class="text-start fw-bold text-dark" style="padding: 14px 16px;">{{ $siswa->nama_siswa }}</td>
-                                            <td style="padding: 14px 16px;">{{ formatVal($harian) }}</td>
-                                            <td style="padding: 14px 16px;">{{ formatVal($midPlus) }}</td>
-                                            <td style="padding: 14px 16px;">{{ formatVal($pasPlus) }}</td>
-                                            <td class="fw-semibold text-primary" style="padding: 14px 16px;">{{ formatVal($rata2) }}</td>
-                                            <td class="fw-bold text-dark" style="padding: 14px 16px;">{{ formatVal($raport) }}</td>
-                                            <td class="text-start" style="padding: 14px 16px;">{{ $rec && $rec->tp_optimal ? $rec->tp_optimal : '-' }}</td>
-                                            <td class="text-start" style="padding: 14px 16px;">{{ $rec && $rec->tp_perlu_peningkatan ? $rec->tp_perlu_peningkatan : '-' }}</td>
+                                        <tr>
+                                            <td class="text-dark">{{ $siswa->nisn }}</td>
+                                            <td class="text-start fw-bold text-dark">{{ $siswa->nama_siswa }}</td>
+                                            <td>{{ formatVal($harian) }}</td>
+                                            <td>{{ formatVal($midPlus) }}</td>
+                                            <td>{{ formatVal($pasPlus) }}</td>
+                                            <td class="fw-semibold text-primary">{{ formatVal($rata2) }}</td>
+                                            <td class="fw-bold text-dark">{{ formatVal($raport) }}</td>
+                                            <td class="text-start">{{ $rec && $rec->tp_optimal ? $rec->tp_optimal : '-' }}</td>
+                                            <td class="text-start">{{ $rec && $rec->tp_perlu_peningkatan ? $rec->tp_perlu_peningkatan : '-' }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -145,3 +150,31 @@
         </div>
     </section>
 @endsection
+
+@push('script')
+<script>
+    $(document).ready(function() {
+        if ($('#rekap-mapel-table').length) {
+            $('#rekap-mapel-table').DataTable({
+                "pageLength": 10,
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]],
+                "language": {
+                    "search": "Cari Siswa:",
+                    "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                    "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data siswa",
+                    "infoEmpty": "Tidak ada data siswa",
+                    "infoFiltered": "(disaring dari _MAX_ total siswa)",
+                    "zeroRecords": "Data siswa tidak ditemukan",
+                    "paginate": {
+                        "first": "Pertama",
+                        "last": "Terakhir",
+                        "next": "Next &raquo;",
+                        "previous": "&laquo; Prev"
+                    }
+                },
+                "ordering": false
+            });
+        }
+    });
+</script>
+@endpush

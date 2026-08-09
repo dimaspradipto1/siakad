@@ -95,11 +95,14 @@ if (!function_exists('abbreviateMapel')) {
                     <div class="card-body pt-4">
                         <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
                             <h5 class="card-title text-dark fw-bold p-0 mb-0">Rekap Nilai Raport Kelas</h5>
+                            <a href="{{ route('nilai.rekap-raport.export', ['tahun_ajaran_id' => $selectedTa, 'semester_name' => $selectedSemName, 'kelas_id' => $selectedKelas, 'siswa_id' => $selectedSiswa]) }}" class="btn btn-success btn-sm px-3 rounded-3 fw-bold" title="Export Excel Rekap Raport">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+                            </a>
                         </div>
 
                         @if(count($students) > 0)
                         <div class="table-responsive">
-                            <table class="table table-bordered table-hover align-middle text-center">
+                            <table class="table table-bordered table-hover align-middle text-center" id="rekap-raport-table" style="width:100%">
                                 <thead class="table-light fw-bold text-dark">
                                     <tr>
                                         <th style="width: 50px;">No</th>
@@ -140,3 +143,31 @@ if (!function_exists('abbreviateMapel')) {
         </div>
     </section>
 @endsection
+
+@push('script')
+<script>
+    $(document).ready(function() {
+        if ($('#rekap-raport-table').length) {
+            $('#rekap-raport-table').DataTable({
+                "pageLength": 10,
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]],
+                "language": {
+                    "search": "Cari Siswa:",
+                    "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                    "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data siswa",
+                    "infoEmpty": "Tidak ada data siswa",
+                    "infoFiltered": "(disaring dari _MAX_ total siswa)",
+                    "zeroRecords": "Data siswa tidak ditemukan",
+                    "paginate": {
+                        "first": "Pertama",
+                        "last": "Terakhir",
+                        "next": "Next &raquo;",
+                        "previous": "&laquo; Prev"
+                    }
+                },
+                "ordering": false
+            });
+        }
+    });
+</script>
+@endpush

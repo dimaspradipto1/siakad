@@ -16,14 +16,18 @@ class MataPelajaranAktifController extends Controller
 
     public function index(MataPelajaranAktifDataTable $dataTable)
     {
-        return $dataTable->render('pages.mata-pelajaran-aktif.index');
+        $tahunAjarans = TahunAjaran::orderBy('nama_tahun_ajaran', 'desc')->get();
+        $gurus = Guru::with('pegawai')->get();
+        $kelas = Kelas::orderBy('nama_kelas', 'asc')->get();
+
+        return $dataTable->render('pages.mata-pelajaran-aktif.index', compact('tahunAjarans', 'gurus', 'kelas'));
     }
 
     public function create()
     {
         $kelas = Kelas::orderBy('nama_kelas', 'asc')->get();
         $tahunAjarans = TahunAjaran::all();
-        $semesters = Semester::all();
+        $semesters = Semester::with('tahunAjaran')->get();
         $gurus = Guru::with('pegawai')->get();
 
         // Get unique master subjects to select from

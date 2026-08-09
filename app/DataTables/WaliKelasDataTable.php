@@ -42,6 +42,23 @@ class WaliKelasDataTable extends DataTable
                 </div>
                 ';
             })
+            ->filterColumn('guru_nama', function($query, $keyword) {
+                $query->whereHas('guru.pegawai', function($q) use ($keyword) {
+                    $q->where('nama_pegawai', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('kelas_nama', function($query, $keyword) {
+                $query->whereHas('kelas', function($q) use ($keyword) {
+                    $q->where('nama_kelas', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('tahun_ajaran', function($query, $keyword) {
+                $query->whereHas('tahunAjaran', function($q) use ($keyword) {
+                    $q->where('tahun_ajaran', 'like', "%{$keyword}%")
+                      ->orWhere('tahun_mulai', 'like', "%{$keyword}%")
+                      ->orWhere('tahun_selesai', 'like', "%{$keyword}%");
+                });
+            })
             ->rawColumns(['action'])
             ->setRowId('id');
     }

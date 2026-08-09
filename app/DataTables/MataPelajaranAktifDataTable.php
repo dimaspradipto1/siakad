@@ -28,6 +28,28 @@ class MataPelajaranAktifDataTable extends DataTable
             ->addColumn('nama_guru', function ($mapel) {
                 return $mapel->guru?->pegawai?->nama_pegawai ?? '-';
             })
+            ->filterColumn('nama_kelas', function($query, $keyword) {
+                $query->whereHas('kelas', function($q) use ($keyword) {
+                    $q->where('nama_kelas', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('nama_tahun_ajaran', function($query, $keyword) {
+                $query->whereHas('tahunAjaran', function($q) use ($keyword) {
+                    $q->where('tahun_mulai', 'like', "%{$keyword}%")
+                      ->orWhere('tahun_selesai', 'like', "%{$keyword}%")
+                      ->orWhereRaw("CONCAT(tahun_mulai, '/', tahun_selesai) LIKE ?", ["%{$keyword}%"]);
+                });
+            })
+            ->filterColumn('nama_semester', function($query, $keyword) {
+                $query->whereHas('semester', function($q) use ($keyword) {
+                    $q->where('nama_semester', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('nama_guru', function($query, $keyword) {
+                $query->whereHas('guru.pegawai', function($q) use ($keyword) {
+                    $q->where('nama_pegawai', 'like', "%{$keyword}%");
+                });
+            })
             ->addColumn('action', function ($mapel) {
                 if (auth()->user()?->roles !== 'admin') return '';
                 return '
@@ -51,9 +73,29 @@ class MataPelajaranAktifDataTable extends DataTable
 
     public function query(MataPelajaran $model): QueryBuilder
     {
-        return $model->newQuery()
+        $query = $model->newQuery()
             ->with(['kelas', 'tahunAjaran', 'semester', 'guru.pegawai'])
             ->whereNotNull('mata_pelajarans.kelas_id');
+
+        if ($this->request()->has('tahun_ajaran_id') && $this->request()->get('tahun_ajaran_id') != '') {
+            $query->where('mata_pelajarans.tahun_ajaran_id', $this->request()->get('tahun_ajaran_id'));
+        }
+
+        if ($this->request()->has('semester_name') && $this->request()->get('semester_name') != '') {
+            $query->whereHas('semester', function ($q) {
+                $q->where('nama_semester', $this->request()->get('semester_name'));
+            });
+        }
+
+        if ($this->request()->has('guru_id') && $this->request()->get('guru_id') != '') {
+            $query->where('mata_pelajarans.guru_id', $this->request()->get('guru_id'));
+        }
+
+        if ($this->request()->has('kelas_id') && $this->request()->get('kelas_id') != '') {
+            $query->where('mata_pelajarans.kelas_id', $this->request()->get('kelas_id'));
+        }
+
+        return $query;
     }
 
     public function html(): HtmlBuilder
@@ -61,7 +103,7 @@ class MataPelajaranAktifDataTable extends DataTable
         return $this->builder()
                     ->setTableId('matapelajaranaktif-table')
                     ->columns($this->getColumns())
-                    ->minifiedAjax()
+                    ->minifiedAjax('', 'data.tahun_ajaran_id = $("#filter_tahun_ajaran_id").val(); data.semester_name = $("#filter_semester_name").val(); data.guru_id = $("#filter_guru_id").val(); data.kelas_id = $("#filter_kelas_id").val();')
                     ->orderBy(1)
                     ->selectStyleSingle()
                     ->buttons([

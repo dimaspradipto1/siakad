@@ -108,8 +108,10 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
 
     Route::get('nilai/rekap-mapel', [NilaiController::class, 'rekapMapel'])->name('nilai.rekap-mapel');
     Route::post('nilai/rekap-mapel/get', [NilaiController::class, 'rekapMapelGet'])->name('nilai.rekap-mapel.get');
+    Route::get('nilai/rekap-mapel/export', [NilaiController::class, 'rekapMapelExport'])->name('nilai.rekap-mapel.export');
     Route::get('nilai/rekap-raport', [NilaiController::class, 'rekapRaport'])->name('nilai.rekap-raport');
     Route::post('nilai/rekap-raport/get', [NilaiController::class, 'rekapRaportGet'])->name('nilai.rekap-raport.get');
+    Route::get('nilai/rekap-raport/export', [NilaiController::class, 'rekapRaportExport'])->name('nilai.rekap-raport.export');
     Route::get('nilai/cetak-raport', [NilaiController::class, 'cetakRaportList'])->name('nilai.cetak-raport');
     Route::get('nilai/cetak-raport/print/{siswa_id}/{tahun_ajaran_id}/{semester_id}', [NilaiController::class, 'cetakRaportPrint'])->name('nilai.cetak-raport.print');
 

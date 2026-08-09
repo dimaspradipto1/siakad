@@ -82,15 +82,32 @@ class User extends Authenticatable
      */
     public function isWaliKelasAktif(): bool
     {
-        $guru = $this->pegawai?->guru;
-
+        $guru = $this->pegawai?->guru ?? $this->guru;
+        if (!$guru && $this->pegawai_id) {
+            $guru = Guru::where('pegawai_id', $this->pegawai_id)->first();
+        }
         if (!$guru) {
-            return false;
+            $guru = Guru::where('user_id', $this->id)->first();
+        }
+        if (!$guru) {
+            $pegawai = Pegawai::where('user_id', $this->id)->first();
+            if (!$pegawai) {
+                $nameBase = trim(explode(',', $this->name)[0]);
+                $pegawai = Pegawai::where('nama_pegawai', 'like', '%' . $nameBase . '%')->first();
+            }
+            if ($pegawai) {
+                $guru = Guru::where('pegawai_id', $pegawai->id)->first();
+            }
         }
 
-        return $guru->waliKelas()
-            ->whereHas('tahunAjaran', fn($q) => $q->where('status', 'Aktif'))
-            ->exists();
+        if (!$guru) {
+            $nameBase = trim(explode(',', $this->name)[0]);
+            return WaliKelas::whereHas('guru.pegawai', function($q) use ($nameBase) {
+                $q->where('nama_pegawai', 'like', '%' . $nameBase . '%');
+            })->exists();
+        }
+
+        return $guru->waliKelas()->exists();
     }
 
     /**
@@ -101,7 +118,7 @@ class User extends Authenticatable
     {
         $active = session('active_role');
 
-        if ($active && $this->roles === 'guru' && $this->isWaliKelasAktif()) {
+        if ($active && in_array($this->roles, ['guru', 'wali kelas']) && $this->isWaliKelasAktif()) {
             return $active;
         }
 

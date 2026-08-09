@@ -16,6 +16,55 @@
     <section class="section">
         <div class="row">
             <div class="col-lg-12">
+                <!-- Filter Card -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body pt-3">
+                        <h5 class="card-title mb-3 fs-6"><i class="bi bi-funnel me-1"></i> Filter Data Mata Pelajaran Aktif</h5>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="filter_tahun_ajaran_id" class="form-label fw-semibold text-secondary small">Tahun Ajaran</label>
+                                <select id="filter_tahun_ajaran_id" class="form-select form-select-sm rounded-3">
+                                    <option value="">Semua Tahun Ajaran</option>
+                                    @foreach($tahunAjarans as $ta)
+                                        <option value="{{ $ta->id }}">{{ $ta->nama_tahun_ajaran }} @if($ta->status == 'Aktif') (Aktif) @endif</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filter_semester_name" class="form-label fw-semibold text-secondary small">Semester</label>
+                                <select id="filter_semester_name" class="form-select form-select-sm rounded-3">
+                                    <option value="">Semua Semester</option>
+                                    <option value="Semester 1 (Ganjil)">Semester 1 (Ganjil)</option>
+                                    <option value="Semester 2 (Genap)">Semester 2 (Genap)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filter_guru_id" class="form-label fw-semibold text-secondary small">Nama Guru</label>
+                                <select id="filter_guru_id" class="form-select form-select-sm rounded-3">
+                                    <option value="">Semua Guru</option>
+                                    @foreach($gurus as $g)
+                                        <option value="{{ $g->id }}">{{ $g->pegawai?->nama_pegawai ?? '-' }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filter_kelas_id" class="form-label fw-semibold text-secondary small">Kelas</label>
+                                <select id="filter_kelas_id" class="form-select form-select-sm rounded-3">
+                                    <option value="">Semua Kelas</option>
+                                    @foreach($kelas as $k)
+                                        <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
+                            <button type="button" id="btn-reset-filter" class="btn btn-outline-secondary btn-sm rounded-3 px-3">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card shadow-sm">
                     <div class="card-body pt-3">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -84,6 +133,24 @@
         {!! $dataTable->scripts() !!}
     @endif
     <script>
+        $(document).ready(function() {
+            $('#filter_tahun_ajaran_id, #filter_semester_name, #filter_guru_id, #filter_kelas_id').on('change', function() {
+                if (window.LaravelDataTables && window.LaravelDataTables["matapelajaranaktif-table"]) {
+                    window.LaravelDataTables["matapelajaranaktif-table"].draw();
+                }
+            });
+
+            $('#btn-reset-filter').on('click', function() {
+                $('#filter_tahun_ajaran_id').val('');
+                $('#filter_semester_name').val('');
+                $('#filter_guru_id').val('');
+                $('#filter_kelas_id').val('');
+                if (window.LaravelDataTables && window.LaravelDataTables["matapelajaranaktif-table"]) {
+                    window.LaravelDataTables["matapelajaranaktif-table"].draw();
+                }
+            });
+        });
+
         $(document).on('click', '.btn-hapus', function (e) {
             e.preventDefault();
             const form = $(this).closest('form');

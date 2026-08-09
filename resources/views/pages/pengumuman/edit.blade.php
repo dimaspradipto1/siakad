@@ -41,9 +41,9 @@
                             <div class="col-md-6">
                                 <label for="semester_id" class="form-label fw-semibold text-dark">Semester <span class="text-danger">*</span></label>
                                 <select id="semester_id" name="semester_id" class="form-select py-2 @error('semester_id') is-invalid @enderror" style="border-radius: 8px;">
-                                    <option value="" disabled></option>
+                                    <option value="" disabled>-- Pilih Semester --</option>
                                     @foreach($semesters as $sem)
-                                        <option value="{{ $sem->id }}" {{ old('semester_id', $pengumuman->semester_id) == $sem->id ? 'selected' : '' }}>
+                                        <option value="{{ $sem->id }}" data-tahun-ajaran="{{ $sem->tahun_ajaran_id }}" {{ old('semester_id', $pengumuman->semester_id) == $sem->id ? 'selected' : '' }}>
                                             {{ $sem->nama_semester }}
                                         </option>
                                     @endforeach

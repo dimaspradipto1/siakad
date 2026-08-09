@@ -18,12 +18,55 @@ class MateriPembelajaranController extends Controller
 {
     use \App\Traits\AuthorizeTransactionData;
 
+    private function getWaliKelasIds($user): array
+    {
+        if (!$user) return [];
+
+        $guru = $user->pegawai?->guru ?? $user->guru;
+        if (!$guru && $user->pegawai_id) {
+            $guru = \App\Models\Guru::where('pegawai_id', $user->pegawai_id)->first();
+        }
+        if (!$guru) {
+            $guru = \App\Models\Guru::where('user_id', $user->id)->first();
+        }
+        if (!$guru) {
+            $pegawai = \App\Models\Pegawai::where('user_id', $user->id)->first();
+            if (!$pegawai) {
+                $nameBase = trim(explode(',', $user->name)[0]);
+                $pegawai = \App\Models\Pegawai::where('nama_pegawai', 'like', '%' . $nameBase . '%')->first();
+            }
+            if ($pegawai) {
+                $guru = \App\Models\Guru::where('pegawai_id', $pegawai->id)->first();
+            }
+        }
+
+        if ($guru) {
+            $ids = \App\Models\WaliKelas::where('guru_id', $guru->id)->pluck('kelas_id')->toArray();
+            if (!empty($ids)) {
+                return array_unique(array_filter($ids));
+            }
+        }
+
+        $nameBase = trim(explode(',', $user->name)[0]);
+        $matchingWali = \App\Models\WaliKelas::whereHas('guru.pegawai', function($q) use ($nameBase) {
+            $q->where('nama_pegawai', 'like', '%' . $nameBase . '%');
+        })->pluck('kelas_id')->toArray();
+
+        if (!empty($matchingWali)) {
+            return array_unique(array_filter($matchingWali));
+        }
+
+        return [];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(MateriPembelajaranDataTable $dataTable)
     {
         $user = auth()->user();
+        $activeRole = $user?->activeRole() ?? $user?->roles;
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
         $isPersonal = $user && in_array($user->roles, ['siswa', 'orang tua']);
         $mySiswa = null;
 
@@ -56,14 +99,16 @@ class MateriPembelajaranController extends Controller
             }
             $studentKelasIds = array_unique(array_filter($studentKelasIds));
             $kelas = Kelas::whereIn('id', $studentKelasIds)->get();
+        } elseif ($isWali) {
+            $waliKelasIds = $this->getWaliKelasIds($user);
+            $kelas = !empty($waliKelasIds)
+                ? Kelas::whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
+                : collect();
         } else {
             $kelas = Kelas::orderBy('nama_kelas', 'asc')->get();
         }
 
-        $uniqueMapels = MataPelajaran::whereNull('kelas_id')->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
-        if ($uniqueMapels->isEmpty()) {
-            $uniqueMapels = MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
-        }
+        $uniqueMapels = MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
 
         $tahunAjarans = TahunAjaran::all();
         return $dataTable->render('pages.materipembelajaran.index', compact('kelas', 'tahunAjarans', 'uniqueMapels'));
@@ -76,10 +121,7 @@ class MateriPembelajaranController extends Controller
     {
         $kelas = Kelas::orderBy('nama_kelas', 'asc')->get();
         $tahunAjarans = TahunAjaran::all();
-        $uniqueMapels = MataPelajaran::whereNull('kelas_id')->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
-        if ($uniqueMapels->isEmpty()) {
-            $uniqueMapels = MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
-        }
+        $uniqueMapels = MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
         return view('pages.materipembelajaran.create', compact('kelas', 'tahunAjarans', 'uniqueMapels'));
     }
 

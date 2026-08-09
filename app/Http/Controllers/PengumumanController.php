@@ -15,9 +15,53 @@ use App\DataTables\PengumumanDataTable;
 class PengumumanController extends Controller
 {
     use \App\Traits\AuthorizeTransactionData;
+    private function getWaliKelasIds($user): array
+    {
+        if (!$user) return [];
+
+        $guru = $user->pegawai?->guru ?? $user->guru;
+        if (!$guru && $user->pegawai_id) {
+            $guru = \App\Models\Guru::where('pegawai_id', $user->pegawai_id)->first();
+        }
+        if (!$guru) {
+            $guru = \App\Models\Guru::where('user_id', $user->id)->first();
+        }
+        if (!$guru) {
+            $pegawai = \App\Models\Pegawai::where('user_id', $user->id)->first();
+            if (!$pegawai) {
+                $nameBase = trim(explode(',', $user->name)[0]);
+                $pegawai = \App\Models\Pegawai::where('nama_pegawai', 'like', '%' . $nameBase . '%')->first();
+            }
+            if ($pegawai) {
+                $guru = \App\Models\Guru::where('pegawai_id', $pegawai->id)->first();
+            }
+        }
+
+        if ($guru) {
+            $ids = \App\Models\WaliKelas::where('guru_id', $guru->id)->pluck('kelas_id')->toArray();
+            if (!empty($ids)) {
+                return array_unique(array_filter($ids));
+            }
+        }
+
+        $nameBase = trim(explode(',', $user->name)[0]);
+        $matchingWali = \App\Models\WaliKelas::whereHas('guru.pegawai', function($q) use ($nameBase) {
+            $q->where('nama_pegawai', 'like', '%' . $nameBase . '%');
+        })->pluck('kelas_id')->toArray();
+
+        if (!empty($matchingWali)) {
+            return array_unique(array_filter($matchingWali));
+        }
+
+        return [];
+    }
+
     public function index(PengumumanDataTable $dataTable)
     {
         $user = auth()->user();
+        $activeRole = $user?->activeRole() ?? $user?->roles;
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
+
         if ($user && in_array($user->roles, ['siswa', 'orang tua'])) {
             $siswa = null;
             if ($user->roles === 'siswa') {
@@ -56,6 +100,11 @@ class PengumumanController extends Controller
             } else {
                 $kelas = collect();
             }
+        } elseif ($isWali) {
+            $waliKelasIds = $this->getWaliKelasIds($user);
+            $kelas = !empty($waliKelasIds)
+                ? \App\Models\Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
+                : collect();
         } else {
             $kelas = \App\Models\Kelas::query()->orderBy('nama_kelas', 'asc')->get();
         }
@@ -72,16 +121,10 @@ class PengumumanController extends Controller
         $tahunAjarans = \App\Models\TahunAjaran::all();
         $semesters = \App\Models\Semester::all();
         $matapelajarans = \App\Models\MataPelajaran::query()
-            ->whereNull('kelas_id')
             ->orderBy('nama_mata_pelajaran', 'asc')
-            ->get();
-        if ($matapelajarans->isEmpty()) {
-            $matapelajarans = \App\Models\MataPelajaran::query()
-                ->select('id', 'nama_mata_pelajaran')
-                ->orderBy('nama_mata_pelajaran', 'asc')
-                ->get()
-                ->unique('nama_mata_pelajaran');
-        }
+            ->get()
+            ->unique('nama_mata_pelajaran')
+            ->values();
         return view('pages.pengumuman.create', compact('kelas', 'tahunAjarans', 'semesters', 'matapelajarans'));
     }
 
@@ -111,16 +154,10 @@ class PengumumanController extends Controller
         $tahunAjarans = \App\Models\TahunAjaran::all();
         $semesters = \App\Models\Semester::all();
         $matapelajarans = \App\Models\MataPelajaran::query()
-            ->whereNull('kelas_id')
             ->orderBy('nama_mata_pelajaran', 'asc')
-            ->get();
-        if ($matapelajarans->isEmpty()) {
-            $matapelajarans = \App\Models\MataPelajaran::query()
-                ->select('id', 'nama_mata_pelajaran')
-                ->orderBy('nama_mata_pelajaran', 'asc')
-                ->get()
-                ->unique('nama_mata_pelajaran');
-        }
+            ->get()
+            ->unique('nama_mata_pelajaran')
+            ->values();
         return view('pages.pengumuman.edit', compact('pengumuman', 'kelas', 'tahunAjarans', 'semesters', 'matapelajarans'));
     }
 

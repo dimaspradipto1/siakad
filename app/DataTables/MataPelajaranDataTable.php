@@ -45,6 +45,12 @@ class MataPelajaranDataTable extends DataTable
                 </div>
                 ';
             })
+            ->filterColumn('kode_mapel', function($query, $keyword) {
+                $query->where(function($q) use ($keyword) {
+                    $q->where('kode_mapel', 'like', "%{$keyword}%")
+                      ->orWhere('id', 'like', "%{$keyword}%");
+                });
+            })
             ->rawColumns(['action'])
             ->setRowId('id');
     }

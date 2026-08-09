@@ -79,9 +79,48 @@ class EkstrakurikulerController extends Controller
         return redirect()->route('ekstrakurikuler.index');
     }
 
+    private function getWaliKelasIds($user): array
+    {
+        if (!$user) return [];
+
+        $guru = $user->pegawai?->guru ?? $user->guru;
+        if (!$guru && $user->pegawai_id) {
+            $guru = \App\Models\Guru::where('pegawai_id', $user->pegawai_id)->first();
+        }
+        if (!$guru) {
+            $guru = \App\Models\Guru::where('user_id', $user->id)->first();
+        }
+        if (!$guru) {
+            $pegawai = \App\Models\Pegawai::where('user_id', $user->id)->first();
+            if (!$pegawai) {
+                $pegawai = \App\Models\Pegawai::where('nama_pegawai', 'like', '%' . $user->name . '%')->first();
+            }
+            if ($pegawai) {
+                $guru = \App\Models\Guru::where('pegawai_id', $pegawai->id)->first();
+            }
+        }
+
+        if ($guru) {
+            return \App\Models\WaliKelas::where('guru_id', $guru->id)->pluck('kelas_id')->toArray();
+        }
+
+        return [];
+    }
+
     public function ekskulSiswa(\Illuminate\Http\Request $request)
     {
-        $kelas = \App\Models\Kelas::query()->orderBy('nama_kelas', 'asc')->get();
+        $user = auth()->user();
+        $activeRole = $user?->activeRole() ?? $user?->roles;
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
+
+        if ($isWali) {
+            $waliKelasIds = $this->getWaliKelasIds($user);
+            $kelas = !empty($waliKelasIds)
+                ? \App\Models\Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
+                : collect();
+        } else {
+            $kelas = \App\Models\Kelas::query()->orderBy('nama_kelas', 'asc')->get();
+        }
         $tahunAjarans = \App\Models\TahunAjaran::query()->get();
         $ekskuls = Ekstrakurikuler::query()->orderBy('nama_ekskul', 'asc')->get();
 
@@ -250,12 +289,26 @@ class EkstrakurikulerController extends Controller
             $selectedSemName = 'Semester 1 (Ganjil)';
         }
 
+        $activeRole = $user?->activeRole() ?? $user?->roles;
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
+
         if ($isPersonal && $mySiswa) {
             $pk = PembagianKelas::where('siswa_id', $mySiswa->id)
                 ->where('tahun_ajaran_id', $selectedTa)
                 ->first();
             $selectedKelas = $pk ? $pk->kelas_id : $mySiswa->kelas_id;
             $kelas = Kelas::query()->where('id', $selectedKelas)->get();
+        } elseif ($isWali) {
+            $waliKelasIds = $this->getWaliKelasIds($user);
+            if (!empty($waliKelasIds)) {
+                $kelas = Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get();
+            } else {
+                $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
+            }
+            $selectedKelas = $request->get('kelas_id');
+            if (!$selectedKelas || (!empty($waliKelasIds) && !in_array($selectedKelas, $waliKelasIds))) {
+                $selectedKelas = $kelas->first()?->id;
+            }
         } else {
             $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
             $selectedKelas = $request->get('kelas_id');

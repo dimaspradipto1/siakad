@@ -57,11 +57,11 @@
                                 </div>
                                 <div class="col-md-4 mt-3 mt-md-0">
                                     <label for="semester_id" class="form-label fw-semibold">Semester <span class="text-danger">*</span></label>
-                                    <select id="semester_id" name="semester_id" class="form-select @error('semester_id') is-invalid @enderror">
-                                        @foreach($semesters as $sem)
-                                            <option value="{{ $sem->id }}" {{ old('semester_id', $catatansiswa->semester_id) == $sem->id ? 'selected' : '' }}>{{ $sem->nama_semester }}</option>
-                                        @endforeach
-                                    </select>
+                                     <select id="semester_id" name="semester_id" class="form-select @error('semester_id') is-invalid @enderror">
+                                         @foreach($semesters as $sem)
+                                             <option value="{{ $sem->id }}" data-tahun-ajaran="{{ $sem->tahun_ajaran_id }}" {{ old('semester_id', $catatansiswa->semester_id) == $sem->id ? 'selected' : '' }}>{{ $sem->nama_semester }}</option>
+                                         @endforeach
+                                     </select>
                                     @error('semester_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4 mt-3 mt-md-0">
