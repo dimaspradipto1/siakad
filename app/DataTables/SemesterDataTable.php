@@ -47,6 +47,13 @@ class SemesterDataTable extends DataTable
                 </div>
                 ';
             })
+            ->filterColumn('tahun_ajaran', function ($query, $keyword) {
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('tahun_ajarans.tahun_mulai', 'like', "%{$keyword}%")
+                      ->orWhere('tahun_ajarans.tahun_selesai', 'like', "%{$keyword}%")
+                      ->orWhereRaw("CONCAT(tahun_ajarans.tahun_mulai, '/', tahun_ajarans.tahun_selesai) like ?", ["%{$keyword}%"]);
+                });
+            })
             ->rawColumns(['status_tahun_ajaran', 'action'])
             ->setRowId('id');
     }

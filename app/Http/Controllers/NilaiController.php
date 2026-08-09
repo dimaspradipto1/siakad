@@ -903,10 +903,9 @@ class NilaiController extends Controller
                 : collect();
         } elseif ($isGuru) {
             $kelasIds = MataPelajaran::query()->where('guru_id', $guruId)->whereNotNull('kelas_id')->pluck('kelas_id');
-            $kelas = Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get();
-            if ($kelas->isEmpty()) {
-                $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
-            }
+            $kelas = !empty($kelasIds)
+                ? Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get()
+                : collect();
         } else {
             $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
         }
@@ -950,9 +949,12 @@ class NilaiController extends Controller
     public function rekapRaport(Request $request)
     {
         $user = auth()->user();
+        $guruId = $this->getGuruId($user);
+        $isAdminOrKepsek = $user && in_array($user->roles, ['admin', 'kepala sekolah']);
         $waliKelasIds = $this->getWaliKelasIds($user);
         $activeRole = $user?->activeRole() ?? $user?->roles;
         $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas' || !empty($waliKelasIds));
+        $isGuru = !$isAdminOrKepsek && !$isWali && !empty($guruId);
 
         $tahunAjarans = TahunAjaran::query()->get();
 
@@ -973,6 +975,15 @@ class NilaiController extends Controller
                 : collect();
             $selectedKelas = $request->get('kelas_id');
             if (!$selectedKelas || !in_array($selectedKelas, $waliKelasIds)) {
+                $selectedKelas = $kelas->first()?->id;
+            }
+        } elseif ($isGuru) {
+            $kelasIds = MataPelajaran::query()->where('guru_id', $guruId)->whereNotNull('kelas_id')->pluck('kelas_id');
+            $kelas = !empty($kelasIds)
+                ? Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get()
+                : collect();
+            $selectedKelas = $request->get('kelas_id');
+            if (!$selectedKelas || !$kelas->contains('id', (int) $selectedKelas)) {
                 $selectedKelas = $kelas->first()?->id;
             }
         } else {

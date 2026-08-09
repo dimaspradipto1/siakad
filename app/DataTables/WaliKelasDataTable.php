@@ -90,9 +90,9 @@ class WaliKelasDataTable extends DataTable
     {
         $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
-            Column::make('tahun_ajaran')->title('Tahun Ajaran')->searchable(false)->orderable(false),
-            Column::make('kelas_nama')->title('Kelas')->searchable(false)->orderable(false),
-            Column::make('guru_nama')->title('Nama Wali Kelas')->searchable(false)->orderable(false),
+            Column::make('tahun_ajaran')->title('Tahun Ajaran')->orderable(false),
+            Column::make('kelas_nama')->title('Kelas')->orderable(false),
+            Column::make('guru_nama')->title('Nama Wali Kelas')->orderable(false),
         ];
 
         if (auth()->user()?->roles === 'admin') {

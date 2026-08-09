@@ -168,12 +168,12 @@ class PengumumanDataTable extends DataTable
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('judul')->title('Judul'),
             Column::make('keterangan_short')->title('Isi Pengumuman')->searchable(false)->orderable(false),
-            Column::make('user')->title('Dipublikasikan Oleh')->searchable(false)->orderable(false),
+            Column::make('user')->title('Dipublikasikan Oleh')->orderable(false),
             Column::make('created_at')->title('Tanggal Dibuat'),
-            Column::make('tahun_ajaran')->title('Tahun Ajaran')->searchable(false)->orderable(false),
-            Column::make('semester')->title('Semester')->searchable(false)->orderable(false),
-            Column::make('kelas')->title('Kelas')->searchable(false)->orderable(false),
-            Column::make('mata_pelajaran')->title('Mapel')->searchable(false)->orderable(false),
+            Column::make('tahun_ajaran')->title('Tahun Ajaran')->orderable(false),
+            Column::make('semester')->title('Semester')->orderable(false),
+            Column::make('kelas')->title('Kelas')->orderable(false),
+            Column::make('mata_pelajaran')->title('Mapel')->orderable(false),
         ];
 
         if (!in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) {

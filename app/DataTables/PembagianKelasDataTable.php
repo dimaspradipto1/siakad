@@ -63,7 +63,9 @@ class PembagianKelasDataTable extends DataTable
                 $query->whereHas('siswa', fn($q) => $q->where('nama_siswa', 'like', "%{$keyword}%"));
             })
             ->filterColumn('tahun_ajaran', function($query, $keyword) {
-                $query->whereHas('tahunAjaran', fn($q) => $q->where('nama_tahun_ajaran', 'like', "%{$keyword}%")->orWhere('tahun_mulai', 'like', "%{$keyword}%")->orWhere('tahun_selesai', 'like', "%{$keyword}%"));
+                $query->whereHas('tahunAjaran', fn($q) => $q->where('tahun_mulai', 'like', "%{$keyword}%")
+                    ->orWhere('tahun_selesai', 'like', "%{$keyword}%")
+                    ->orWhereRaw("CONCAT(tahun_mulai, '/', tahun_selesai) like ?", ["%{$keyword}%"]));
             })
             ->filterColumn('tingkat', function($query, $keyword) {
                 $query->whereHas('kelas', fn($q) => $q->where('tingkat', 'like', "%{$keyword}%"));

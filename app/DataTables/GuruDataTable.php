@@ -24,6 +24,12 @@ class GuruDataTable extends DataTable
             ->addColumn('status', function ($guru) {
                 return $guru->status ?? 'Aktif';
             })
+            ->filterColumn('nama_pegawai', function ($query, $keyword) {
+                $query->whereRaw('LOWER(pegawais.nama_pegawai) LIKE ?', ['%' . strtolower($keyword) . '%']);
+            })
+            ->filterColumn('jenis_kelamin', function ($query, $keyword) {
+                $query->whereRaw('LOWER(pegawais.jenis_kelamin) LIKE ?', ['%' . strtolower($keyword) . '%']);
+            })
             ->setRowId('id');
     }
 
