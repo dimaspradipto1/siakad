@@ -40,6 +40,7 @@ class UserDataTable extends DataTable
                 return '<span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Nonaktif</span>';
             })
             ->addColumn('action', function($user) {
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('user.edit', $user->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -93,18 +94,23 @@ class UserDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('name')->title('Nama'),
             Column::make('email')->title('Email'),
             Column::make('roles')->title('Role'),
             Column::make('is_active')->title('Status')->addClass('text-start'),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-start'),
-        ];
+                  ->addClass('text-start');
+        }
+
+        return $columns;
     }
 
     /**

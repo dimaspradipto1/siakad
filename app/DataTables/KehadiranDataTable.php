@@ -32,7 +32,7 @@ class KehadiranDataTable extends DataTable
                 return $k->jenisKehadiran ? $k->jenisKehadiran->nama_kehadiran : '-';
             })
             ->addColumn('action', function ($k) {
-                if (in_array(auth()->user()->roles, ['siswa', 'orang tua'])) return '';
+                if (in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('kehadiran.edit', $k->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -107,7 +107,7 @@ class KehadiranDataTable extends DataTable
             Column::make('keterangan')->title('Keterangan'),
         ];
 
-        if (!in_array(auth()->user()->roles, ['siswa', 'orang tua'])) {
+        if (!in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) {
             $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)

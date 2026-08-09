@@ -93,8 +93,8 @@
                                                 <td>{{ $siswa->nisn }}</td>
                                                 <td class="text-start fw-semibold">{{ $siswa->nama_siswa }}</td>
                                                 <td>{{ $siswa->kelas->nama_kelas ?? '-' }}</td>
-                                                <td class="text-start" style="overflow: visible;">
-                                                    <select name="ekskul[{{ $siswa->id }}][]" class="form-select select2" multiple data-placeholder="Pilih Ekskul">
+                                                 <td class="text-start" style="overflow: visible;">
+                                                    <select name="ekskul[{{ $siswa->id }}][]" class="form-select select2-ekskul" multiple data-placeholder="Pilih Ekskul">
                                                         @foreach($ekskuls as $ekskul)
                                                             <option value="{{ $ekskul->id }}" {{ in_array($ekskul->id, $siswa->assigned_ekskuls) ? 'selected' : '' }}>
                                                                 {{ $ekskul->nama_ekskul }}
@@ -127,3 +127,19 @@
         </div>
     </section>
 @endsection
+
+@push('script')
+    <script>
+        $(document).ready(function() {
+            if ($.fn.select2) {
+                $('.select2-ekskul').select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: 'Pilih Ekskul',
+                    allowClear: true,
+                    closeOnSelect: false
+                });
+            }
+        });
+    </script>
+@endpush

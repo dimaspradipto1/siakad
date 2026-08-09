@@ -23,7 +23,7 @@
                             <h5 class="card-title text-primary fw-bold p-0 m-0">
                                 <i class="bi bi-info-circle-fill me-1"></i> Informasi Mata Pelajaran
                             </h5>
-                            @if(in_array(auth()->user()->roles, ['admin', 'kepala sekolah']))
+                            @if(auth()->user()->roles === 'admin')
                                 <a href="{{ route('matapelajaran.edit', $matapelajaran->id) }}" class="btn btn-warning btn-sm text-dark px-3 fw-semibold">
                                     <i class="bi bi-pencil me-1"></i> Edit Data
                                 </a>

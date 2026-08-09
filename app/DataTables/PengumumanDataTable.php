@@ -39,8 +39,8 @@ class PengumumanDataTable extends DataTable
                 return $p->mataPelajaran ? $p->mataPelajaran->nama_mata_pelajaran : 'Semua Mapel';
             })
             ->addColumn('action', function ($p) {
-                if (in_array(auth()->user()->roles, ['siswa', 'orang tua'])) {
-                    return '-';
+                if (in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) {
+                    return '';
                 }
                 return '
                 <div class="d-flex gap-2 justify-content-center">
@@ -64,6 +64,47 @@ class PengumumanDataTable extends DataTable
     public function query(Pengumuman $model): QueryBuilder
     {
         $query = $model->newQuery()->with(['user', 'tahunAjaran', 'semester', 'kelas', 'mataPelajaran']);
+        $user = auth()->user();
+
+        if ($user && in_array($user->roles, ['siswa', 'orang tua'])) {
+            $siswa = null;
+            if ($user->roles === 'siswa') {
+                $siswa = \App\Models\Siswa::where('user_id', $user->id)->first();
+            } else {
+                $ortu = \App\Models\OrangTua::where('user_id', $user->id)->first();
+                if (!$ortu) {
+                    $ortu = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
+                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
+                        ->first();
+                }
+                if ($ortu) {
+                    $selectedChildId = session('selected_child_id');
+                    if ($selectedChildId) {
+                        $siswa = \App\Models\Siswa::where('id', $selectedChildId)->where('orang_tua_id', $ortu->id)->first();
+                    }
+                    if (!$siswa) {
+                        $siswa = \App\Models\Siswa::where('orang_tua_id', $ortu->id)->first();
+                    }
+                }
+            }
+
+            if ($siswa) {
+                $studentKelasIds = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)
+                    ->pluck('kelas_id')
+                    ->toArray();
+                if ($siswa->kelas_id) {
+                    $studentKelasIds[] = $siswa->kelas_id;
+                }
+                $studentKelasIds = array_unique(array_filter($studentKelasIds));
+
+                $query->where(function ($q) use ($studentKelasIds) {
+                    $q->whereNull('kelas_id')
+                      ->orWhereIn('kelas_id', $studentKelasIds);
+                });
+            } else {
+                $query->whereNull('kelas_id');
+            }
+        }
         
         $request = request();
         if ($request->filled('tahun_ajaran_id')) {
@@ -108,7 +149,7 @@ class PengumumanDataTable extends DataTable
 
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('judul')->title('Judul'),
             Column::make('keterangan_short')->title('Isi Pengumuman')->searchable(false)->orderable(false),
@@ -118,12 +159,17 @@ class PengumumanDataTable extends DataTable
             Column::make('semester')->title('Semester')->searchable(false)->orderable(false),
             Column::make('kelas')->title('Kelas')->searchable(false)->orderable(false),
             Column::make('mata_pelajaran')->title('Mapel')->searchable(false)->orderable(false),
-            Column::computed('action')
+        ];
+
+        if (!in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-start'),
-        ];
+                  ->addClass('text-start');
+        }
+
+        return $columns;
     }
 
     protected function filename(): string

@@ -17,7 +17,49 @@ class PengumumanController extends Controller
     use \App\Traits\AuthorizeTransactionData;
     public function index(PengumumanDataTable $dataTable)
     {
-        $kelas = \App\Models\Kelas::query()->orderBy('nama_kelas', 'asc')->get();
+        $user = auth()->user();
+        if ($user && in_array($user->roles, ['siswa', 'orang tua'])) {
+            $siswa = null;
+            if ($user->roles === 'siswa') {
+                $siswa = \App\Models\Siswa::where('user_id', $user->id)->first();
+            } else {
+                $ortu = \App\Models\OrangTua::where('user_id', $user->id)->first();
+                if (!$ortu) {
+                    $ortu = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
+                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
+                        ->first();
+                }
+                if ($ortu) {
+                    $selectedChildId = session('selected_child_id');
+                    if ($selectedChildId) {
+                        $siswa = \App\Models\Siswa::where('id', $selectedChildId)->where('orang_tua_id', $ortu->id)->first();
+                    }
+                    if (!$siswa) {
+                        $siswa = \App\Models\Siswa::where('orang_tua_id', $ortu->id)->first();
+                    }
+                }
+            }
+
+            if ($siswa) {
+                $studentKelasIds = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)
+                    ->pluck('kelas_id')
+                    ->toArray();
+                if ($siswa->kelas_id) {
+                    $studentKelasIds[] = $siswa->kelas_id;
+                }
+                $studentKelasIds = array_unique(array_filter($studentKelasIds));
+
+                $kelas = \App\Models\Kelas::query()
+                    ->whereIn('id', $studentKelasIds)
+                    ->orderBy('nama_kelas', 'asc')
+                    ->get();
+            } else {
+                $kelas = collect();
+            }
+        } else {
+            $kelas = \App\Models\Kelas::query()->orderBy('nama_kelas', 'asc')->get();
+        }
+
         $tahunAjarans = \App\Models\TahunAjaran::query()->get();
         $mapels = \App\Models\MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran', 'asc')->get(['nama_mata_pelajaran']);
         

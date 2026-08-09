@@ -29,7 +29,7 @@ class MataPelajaranDataTable extends DataTable
                 return $mapel->tp_peningkatan ?? '-';
             })
             ->addColumn('action', function ($mapel) {
-                if (!in_array(auth()->user()->roles, ['admin', 'kepala sekolah'])) return '';
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('matapelajaran.edit', $mapel->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -74,19 +74,24 @@ class MataPelajaranDataTable extends DataTable
 
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false)->addClass('text-center'),
             Column::make('kode_mapel')->title('Kode Mapel'),
             Column::make('nama_mata_pelajaran')->title('Nama Mapel'),
             Column::make('kkm')->title('KKM'),
             Column::make('tp_optimal')->title('TP yang Optimal'),
             Column::make('tp_peningkatan')->title('TP Yang Perlu Peningkatan'),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-center'),
-        ];
+                  ->addClass('text-center');
+        }
+
+        return $columns;
     }
 
     protected function filename(): string

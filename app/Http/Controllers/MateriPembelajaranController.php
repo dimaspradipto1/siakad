@@ -32,21 +32,36 @@ class MateriPembelajaranController extends Controller
                 $mySiswa = \App\Models\Siswa::where('user_id', $user->id)->first();
             } else {
                 $orangTua = \App\Models\OrangTua::where('user_id', $user->id)->first();
+                if (!$orangTua) {
+                    $orangTua = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
+                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
+                        ->first();
+                }
                 if ($orangTua) {
-                    $mySiswa = \App\Models\Siswa::where('orang_tua_id', $orangTua->id)->first();
+                    $selectedChildId = session('selected_child_id');
+                    if ($selectedChildId) {
+                        $mySiswa = \App\Models\Siswa::where('id', $selectedChildId)->where('orang_tua_id', $orangTua->id)->first();
+                    }
+                    if (!$mySiswa) {
+                        $mySiswa = \App\Models\Siswa::where('orang_tua_id', $orangTua->id)->first();
+                    }
                 }
             }
         }
 
         if ($isPersonal && $mySiswa) {
-            $kelas = Kelas::where('id', $mySiswa->kelas_id)->get();
-            $uniqueMapels = MataPelajaran::query()
-                ->where('kelas_id', $mySiswa->kelas_id)
-                ->distinct()
-                ->orderBy('nama_mata_pelajaran')
-                ->pluck('nama_mata_pelajaran');
+            $studentKelasIds = \App\Models\PembagianKelas::where('siswa_id', $mySiswa->id)->pluck('kelas_id')->toArray();
+            if ($mySiswa->kelas_id) {
+                $studentKelasIds[] = $mySiswa->kelas_id;
+            }
+            $studentKelasIds = array_unique(array_filter($studentKelasIds));
+            $kelas = Kelas::whereIn('id', $studentKelasIds)->get();
         } else {
             $kelas = Kelas::orderBy('nama_kelas', 'asc')->get();
+        }
+
+        $uniqueMapels = MataPelajaran::whereNull('kelas_id')->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
+        if ($uniqueMapels->isEmpty()) {
             $uniqueMapels = MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
         }
 
@@ -61,7 +76,10 @@ class MateriPembelajaranController extends Controller
     {
         $kelas = Kelas::orderBy('nama_kelas', 'asc')->get();
         $tahunAjarans = TahunAjaran::all();
-        $uniqueMapels = MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
+        $uniqueMapels = MataPelajaran::whereNull('kelas_id')->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
+        if ($uniqueMapels->isEmpty()) {
+            $uniqueMapels = MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran')->pluck('nama_mata_pelajaran');
+        }
         return view('pages.materipembelajaran.create', compact('kelas', 'tahunAjarans', 'uniqueMapels'));
     }
 

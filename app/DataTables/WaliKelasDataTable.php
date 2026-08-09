@@ -71,17 +71,22 @@ class WaliKelasDataTable extends DataTable
 
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('tahun_ajaran')->title('Tahun Ajaran')->searchable(false)->orderable(false),
             Column::make('kelas_nama')->title('Kelas')->searchable(false)->orderable(false),
             Column::make('guru_nama')->title('Nama Wali Kelas')->searchable(false)->orderable(false),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-start'),
-        ];
+                  ->addClass('text-start');
+        }
+
+        return $columns;
     }
 
     protected function filename(): string

@@ -53,7 +53,7 @@ class MateriPembelajaranDataTable extends DataTable
                 $user = auth()->user();
                 $buttons = '';
 
-                if ($user && !in_array($user->roles, ['siswa', 'orang tua'])) {
+                if ($user && !in_array($user->roles, ['siswa', 'orang tua', 'kepala sekolah'])) {
                     $buttons .= '
                     <form action="' . route('materipembelajaran.destroy', $p->id) . '" method="POST" class="d-inline">
                         ' . csrf_field() . '
@@ -106,20 +106,37 @@ class MateriPembelajaranDataTable extends DataTable
 
         // Role-based visibility
         $user = auth()->user();
-        if ($user && $user->roles === 'siswa') {
-            $siswa = Siswa::query()->where('user_id', $user->id)->first();
-            if ($siswa) {
-                $query->where('kelas_id', $siswa->kelas_id);
+        if ($user && in_array($user->roles, ['siswa', 'orang tua'])) {
+            $siswa = null;
+            if ($user->roles === 'siswa') {
+                $siswa = Siswa::query()->where('user_id', $user->id)->first();
             } else {
-                $query->whereRaw('1 = 0'); // No access if student profile not found
+                $orangTua = OrangTua::query()->where('user_id', $user->id)->first();
+                if (!$orangTua) {
+                    $orangTua = OrangTua::query()->where('nama_ayah', 'like', '%' . $user->name . '%')
+                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
+                        ->first();
+                }
+                if ($orangTua) {
+                    $selectedChildId = session('selected_child_id');
+                    if ($selectedChildId) {
+                        $siswa = Siswa::where('id', $selectedChildId)->where('orang_tua_id', $orangTua->id)->first();
+                    }
+                    if (!$siswa) {
+                        $siswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
+                    }
+                }
             }
-        } elseif ($user && $user->roles === 'orang tua') {
-            $orangTua = OrangTua::query()->where('user_id', $user->id)->first();
-            if ($orangTua) {
-                $kelasIds = $orangTua->siswa()->pluck('kelas_id');
-                $query->whereIn('kelas_id', $kelasIds);
+
+            if ($siswa) {
+                $studentKelasIds = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)->pluck('kelas_id')->toArray();
+                if ($siswa->kelas_id) {
+                    $studentKelasIds[] = $siswa->kelas_id;
+                }
+                $studentKelasIds = array_unique(array_filter($studentKelasIds));
+                $query->whereIn('kelas_id', $studentKelasIds);
             } else {
-                $query->whereRaw('1 = 0'); // No access if parent profile not found
+                $query->whereRaw('1 = 0');
             }
         }
 

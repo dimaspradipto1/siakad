@@ -40,7 +40,7 @@
                             Status: {{ $profil->status ?? 'Aktif' }}
                         </span>
                         
-                        @if (in_array(auth()->user()->roles, ['admin', 'kepala sekolah']))
+                        @if (auth()->user()->roles === 'admin')
                             <div class="d-flex gap-2 w-100 px-3 justify-content-center">
                                 <a href="{{ route('profil-sekolah.edit', $profil->id) }}" class="btn btn-warning text-white btn-sm px-3 rounded-pill d-flex align-items-center gap-1">
                                     <i class="bi bi-pencil-square"></i> Ubah

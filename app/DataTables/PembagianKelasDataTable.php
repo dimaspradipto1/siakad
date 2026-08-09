@@ -40,7 +40,7 @@ class PembagianKelasDataTable extends DataTable
                 return $row->wali_kelas_nama;
             })
             ->addColumn('action', function ($row) {
-                if (!in_array(auth()->user()->roles, ['admin', 'kepala sekolah'])) return '';
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('pembagiankelas.edit', $row->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -96,7 +96,7 @@ class PembagianKelasDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('nisn')->title('NISN'),
             Column::make('nama_siswa')->title('Nama Siswa'),
@@ -104,12 +104,17 @@ class PembagianKelasDataTable extends DataTable
             Column::make('tingkat')->title('Tingkat Kelas'),
             Column::make('nama_kelas')->title('Kelas'),
             Column::make('wali_kelas')->title('Wali Kelas'),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-center'),
-        ];
+                  ->addClass('text-center');
+        }
+
+        return $columns;
     }
 
     /**

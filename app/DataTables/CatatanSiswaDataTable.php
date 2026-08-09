@@ -32,7 +32,7 @@ class CatatanSiswaDataTable extends DataTable
                 return $c->guru && $c->guru->pegawai ? $c->guru->pegawai->nama_pegawai : '-';
             })
             ->addColumn('action', function ($c) {
-                if (in_array(auth()->user()->roles, ['siswa', 'orang tua'])) return '';
+                if (in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('catatansiswa.edit', $c->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -108,7 +108,7 @@ class CatatanSiswaDataTable extends DataTable
             Column::make('status')->title('Status'),
         ];
 
-        if (!in_array(auth()->user()->roles, ['siswa', 'orang tua'])) {
+        if (!in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) {
             $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)

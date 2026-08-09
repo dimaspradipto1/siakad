@@ -45,7 +45,7 @@ class ProfilSekolahDataTable extends DataTable
                 return '<span class="badge ' . $statusClass . '">' . e($row->status ?? '-') . '</span>';
             })
             ->addColumn('action', function ($row) {
-                if (!Auth::user() || !in_array(Auth::user()->roles, ['admin', 'kepala sekolah'])) return '';
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('profil-sekolah.edit', $row->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -101,7 +101,7 @@ class ProfilSekolahDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::computed('logo')->title('Logo')->searchable(false)->orderable(false),
             Column::make('nama_sekolah')->title('Nama Sekolah'),
@@ -109,12 +109,17 @@ class ProfilSekolahDataTable extends DataTable
             Column::computed('kepala_sekolah_info')->title('Kepala Sekolah')->orderable(false),
             Column::computed('tahun_ajaran')->title('Tahun Ajaran')->orderable(false),
             Column::computed('status_badge')->title('Status')->orderable(false),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-center'),
-        ];
+                  ->addClass('text-center');
+        }
+
+        return $columns;
     }
 
     /**

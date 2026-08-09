@@ -289,7 +289,7 @@ class EkstrakurikulerController extends Controller
                     ->where('tahun_ajaran_id', $selectedTa)
                     ->where('semester_id', $selectedSem)
                     ->get()
-                    ->pluck('ekstrakurikuler.nama_ekstrakurikuler')
+                    ->pluck('ekstrakurikuler.nama_ekskul')
                     ->filter()
                     ->implode(', ');
 

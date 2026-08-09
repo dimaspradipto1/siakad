@@ -17,7 +17,7 @@ class JenisCatatanDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addIndexColumn()
             ->addColumn('action', function ($jenis) {
-                if (!in_array(auth()->user()->roles, ['admin', 'kepala sekolah'])) return '';
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('jeniscatatan.edit', $jenis->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -62,17 +62,22 @@ class JenisCatatanDataTable extends DataTable
 
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('kode')->title('Kode'),
             Column::make('nama_jenis_catatan')->title('Nama Jenis Catatan'),
             Column::make('keterangan')->title('Keterangan'),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-start'),
-        ];
+                  ->addClass('text-start');
+        }
+
+        return $columns;
     }
 
     protected function filename(): string

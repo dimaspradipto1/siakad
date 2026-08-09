@@ -29,7 +29,7 @@ class MataPelajaranAktifDataTable extends DataTable
                 return $mapel->guru?->pegawai?->nama_pegawai ?? '-';
             })
             ->addColumn('action', function ($mapel) {
-                if (!in_array(auth()->user()->roles, ['admin', 'kepala sekolah'])) return '';
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('matapelajaranaktif.edit', $mapel->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -76,7 +76,7 @@ class MataPelajaranAktifDataTable extends DataTable
 
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false)->addClass('text-center'),
             Column::make('nama_kelas')->title('Kelas'),
             Column::make('nama_tahun_ajaran')->title('Tahun Ajaran'),
@@ -85,12 +85,17 @@ class MataPelajaranAktifDataTable extends DataTable
             Column::make('nama_guru')->title('Nama Guru'),
             Column::make('hari_mengajar')->title('Hari Mengajar'),
             Column::make('jam_mengajar')->title('Jam Mengajar'),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-center'),
-        ];
+                  ->addClass('text-center');
+        }
+
+        return $columns;
     }
 
     protected function filename(): string

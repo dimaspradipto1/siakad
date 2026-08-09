@@ -21,7 +21,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="card-title mb-0">Daftar Ekstrakurikuler</h5>
                             @if(!in_array(auth()->user()->roles, ['siswa', 'orang tua']))
-                            @if(in_array(auth()->user()->roles, ['admin', 'kepala sekolah']))
+                            @if(auth()->user()->roles === 'admin')
                             <a href="{{ route('ekstrakurikuler.create') }}" class="btn btn-primary btn-sm">
                                 <i class="bi bi-plus-circle-fill"></i> Tambah Ekstrakurikuler
                             </a>

@@ -17,7 +17,7 @@ class EkstrakurikulerDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addIndexColumn()
             ->addColumn('action', function ($ekskul) {
-                if (!in_array(auth()->user()->roles, ['admin', 'kepala sekolah'])) return '';
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('ekstrakurikuler.edit', $ekskul->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -69,7 +69,7 @@ class EkstrakurikulerDataTable extends DataTable
             Column::make('keterangan')->title('Keterangan'),
         ];
 
-        if (!in_array(auth()->user()->roles, ['siswa', 'orang tua'])) {
+        if (auth()->user()?->roles === 'admin') {
             $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)

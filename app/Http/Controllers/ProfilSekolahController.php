@@ -21,7 +21,7 @@ class ProfilSekolahController extends Controller
 
         if (!$profil) {
             $user = auth()->user();
-            if ($user && in_array($user->roles, ['admin', 'kepala sekolah'])) {
+            if ($user && $user->roles === 'admin') {
                 return redirect()->route('profil-sekolah.create');
             } else {
                 abort(404, 'Profil sekolah belum dibuat.');

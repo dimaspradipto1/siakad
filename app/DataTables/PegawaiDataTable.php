@@ -34,7 +34,7 @@ class PegawaiDataTable extends DataTable
                 return $pegawai->user ? ucwords($pegawai->user->roles) : ucwords($pegawai->jabatan ?? 'Pegawai');
             })
             ->addColumn('action', function ($pegawai) {
-                if (!in_array(auth()->user()->roles, ['admin', 'kepala sekolah'])) return '';
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('pegawai.edit', $pegawai->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -88,7 +88,7 @@ class PegawaiDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('nip')->title('NIP'),
             Column::make('nama_pegawai')->title('Nama'),
@@ -97,12 +97,17 @@ class PegawaiDataTable extends DataTable
             Column::make('pendidikan_terakhir')->title('Pendidikan Terakhir')->searchable(false)->orderable(false),
             Column::make('status')->title('Status')->searchable(false)->orderable(false),
             Column::make('role')->title('Role')->searchable(false)->orderable(false),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-center'),
-        ];
+                  ->addClass('text-center');
+        }
+
+        return $columns;
     }
 
     /**

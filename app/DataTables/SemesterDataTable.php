@@ -31,7 +31,7 @@ class SemesterDataTable extends DataTable
                 return $badge;
             })
             ->addColumn('action', function ($semester) {
-                if (!in_array(auth()->user()->roles, ['admin', 'kepala sekolah'])) return '';
+                if (auth()->user()?->roles !== 'admin') return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('semester.edit', $semester->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -92,17 +92,22 @@ class SemesterDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('tahun_ajaran')->title('Tahun Ajaran'),
             Column::make('nama_semester')->title('Nama Semester'),
             Column::make('status_tahun_ajaran')->title('Status TA')->searchable(false)->orderable(false),
-            Column::computed('action')
+        ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
                   ->width(100)
-                  ->addClass('text-start'),
-        ];
+                  ->addClass('text-start');
+        }
+
+        return $columns;
     }
 
     /**

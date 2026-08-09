@@ -31,7 +31,7 @@ class NilaiDataTable extends DataTable
                 return $sem . ' (' . $ta . ')';
             })
             ->addColumn('action', function ($n) {
-                if (in_array(auth()->user()->roles, ['siswa', 'orang tua'])) return '';
+                if (in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) return '';
                 return '
                 <div class="d-flex gap-1 justify-content-center">
                     <a href="' . route('nilai.edit', $n->id) . '" class="btn btn-warning btn-sm" title="Edit">
@@ -106,7 +106,7 @@ class NilaiDataTable extends DataTable
             Column::make('predikat')->title('Predikat'),
         ];
 
-        if (!in_array(auth()->user()->roles, ['siswa', 'orang tua'])) {
+        if (!in_array(auth()->user()?->roles, ['siswa', 'orang tua', 'kepala sekolah'])) {
             $columns[] = Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
