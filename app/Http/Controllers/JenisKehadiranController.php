@@ -25,10 +25,11 @@ class JenisKehadiranController extends Controller
         $validated = $request->validated();
         $jenis = JenisKehadiran::create($validated);
 
-        alert()->success(
+        alert()->html(
             'Berhasil!',
-            'Jenis Kehadiran <strong>' . e($jenis->nama_kehadiran) . '</strong> berhasil ditambahkan.'
-        )->html();
+            'Jenis Kehadiran <strong>' . e($jenis->nama_kehadiran) . '</strong> berhasil ditambahkan.',
+            'success'
+        );
 
         return redirect()->route('jeniskehadiran.index');
     }
@@ -48,10 +49,11 @@ class JenisKehadiranController extends Controller
         $validated = $request->validated();
         $jeniskehadiran->update($validated);
 
-        alert()->success(
+        alert()->html(
             'Diperbarui!',
-            'Jenis Kehadiran <strong>' . e($jeniskehadiran->nama_kehadiran) . '</strong> berhasil diperbarui.'
-        )->html();
+            'Jenis Kehadiran <strong>' . e($jeniskehadiran->nama_kehadiran) . '</strong> berhasil diperbarui.',
+            'success'
+        );
 
         return redirect()->route('jeniskehadiran.index');
     }
@@ -61,10 +63,11 @@ class JenisKehadiranController extends Controller
         $nama = $jeniskehadiran->nama_kehadiran;
         $jeniskehadiran->delete();
 
-        alert()->success(
+        alert()->html(
             'Dihapus!',
-            'Jenis Kehadiran <strong>' . e($nama) . '</strong> berhasil dihapus.'
-        )->html();
+            'Jenis Kehadiran <strong>' . e($nama) . '</strong> berhasil dihapus.',
+            'success'
+        );
 
         return redirect()->route('jeniskehadiran.index');
     }

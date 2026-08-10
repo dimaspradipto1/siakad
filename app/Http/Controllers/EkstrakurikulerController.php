@@ -35,10 +35,11 @@ class EkstrakurikulerController extends Controller
         $validated = $request->validated();
         $ekskul = Ekstrakurikuler::create($validated);
 
-        alert()->success(
+        alert()->html(
             'Berhasil!',
-            'Ekstrakurikuler <strong>' . e($ekskul->nama_ekskul) . '</strong> berhasil ditambahkan.'
-        )->html();
+            'Ekstrakurikuler <strong>' . e($ekskul->nama_ekskul) . '</strong> berhasil ditambahkan.',
+            'success'
+        );
 
         return redirect()->route('ekstrakurikuler.index');
     }
@@ -58,10 +59,11 @@ class EkstrakurikulerController extends Controller
         $validated = $request->validated();
         $ekstrakurikuler->update($validated);
 
-        alert()->success(
+        alert()->html(
             'Diperbarui!',
-            'Ekstrakurikuler <strong>' . e($ekstrakurikuler->nama_ekskul) . '</strong> berhasil diperbarui.'
-        )->html();
+            'Ekstrakurikuler <strong>' . e($ekstrakurikuler->nama_ekskul) . '</strong> berhasil diperbarui.',
+            'success'
+        );
 
         return redirect()->route('ekstrakurikuler.index');
     }
@@ -71,10 +73,11 @@ class EkstrakurikulerController extends Controller
         $nama = $ekstrakurikuler->nama_ekskul;
         $ekstrakurikuler->delete();
 
-        alert()->success(
+        alert()->html(
             'Dihapus!',
-            'Ekstrakurikuler <strong>' . e($nama) . '</strong> berhasil dihapus.'
-        )->html();
+            'Ekstrakurikuler <strong>' . e($nama) . '</strong> berhasil dihapus.',
+            'success'
+        );
 
         return redirect()->route('ekstrakurikuler.index');
     }
@@ -203,7 +206,7 @@ class EkstrakurikulerController extends Controller
             }
         }
 
-        alert()->success('Berhasil!', 'Data ekstrakurikuler siswa berhasil disimpan.')->html();
+        alert()->success('Berhasil!', 'Data ekstrakurikuler siswa berhasil disimpan.');
         return redirect()->back();
     }
 

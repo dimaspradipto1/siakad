@@ -502,9 +502,7 @@ class KehadiranController extends Controller
         if ($isGuru) {
             $guru = $user->pegawai?->guru ?? $user->guru;
             $guruId = $guru ? $guru->id : 0;
-            $mapelsQuery->where(function($q) use ($guruId) {
-                $q->where('guru_id', $guruId)->orWhereNull('guru_id')->orWhere('guru_id', 0);
-            });
+            $mapelsQuery->where('guru_id', $guruId);
         }
 
         $mapels = $mapelsQuery->orderByRaw('CASE WHEN kelas_id IS NOT NULL THEN 0 ELSE 1 END')

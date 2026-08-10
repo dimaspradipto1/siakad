@@ -49,10 +49,11 @@ class GuruController extends Controller
         
         $nama = $guru->pegawai ? $guru->pegawai->nama_pegawai : $guru->nip_guru;
 
-        alert()->success(
+        alert()->html(
             'Berhasil!',
-            'Guru <strong>' . e($nama) . '</strong> berhasil ditambahkan.'
-        )->html();
+            'Guru <strong>' . e($nama) . '</strong> berhasil ditambahkan.',
+            'success'
+        );
 
         return redirect()->route('guru.index');
     }
@@ -97,10 +98,11 @@ class GuruController extends Controller
 
         $nama = $guru->pegawai ? $guru->pegawai->nama_pegawai : $guru->nip_guru;
 
-        alert()->success(
+        alert()->html(
             'Diperbarui!',
-            'Data guru <strong>' . e($nama) . '</strong> berhasil diperbarui.'
-        )->html();
+            'Data guru <strong>' . e($nama) . '</strong> berhasil diperbarui.',
+            'success'
+        );
 
         return redirect()->route('guru.index');
     }
@@ -142,10 +144,11 @@ class GuruController extends Controller
         
         $guru->delete();
 
-        alert()->success(
+        alert()->html(
             'Dihapus!',
-            'Data guru <strong>' . e($nama) . '</strong> berhasil dihapus.'
-        )->html();
+            'Data guru <strong>' . e($nama) . '</strong> berhasil dihapus.',
+            'success'
+        );
 
         return redirect()->route('guru.index');
     }

@@ -448,7 +448,7 @@ class SiswaController extends Controller
             }
         }
 
-        alert()->success('Berhasil!', 'Data profil berhasil diperbarui.')->html();
+        alert()->success('Berhasil!', 'Data profil berhasil diperbarui.');
         return redirect()->back();
     }
 }
