@@ -90,9 +90,6 @@
                                         <th class="table-success" style="width: 100px;">Rata2</th>
                                     </tr>
                                 </thead>
-                                        <th class="table-success" style="width: 100px;">Rata2</th>
-                                    </tr>
-                                </thead>
                                 <tbody>
                                     @foreach($students as $index => $siswa)
                                         <tr>

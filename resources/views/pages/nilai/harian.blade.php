@@ -85,8 +85,29 @@
                 @if($selectedTa && $selectedSem && $selectedKelas && $selectedMapel)
                 <div class="card shadow-sm border-0">
                     <div class="card-body pt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title text-primary fw-bold p-0 mb-0">Form Input Nilai Harian</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="card-title text-primary fw-bold p-0 mb-0">Form Input Nilai Harian</h5>
+                                @if($isLockedHarian)
+                                    <span class="badge bg-danger px-3 py-2" style="font-size:0.82rem;">🔒 Terkunci</span>
+                                @else
+                                    <span class="badge bg-success px-3 py-2" style="font-size:0.82rem;">🔓 Terbuka</span>
+                                @endif
+                            </div>
+                            @if($isAdmin && $selectedMapel)
+                                <form method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline" onsubmit="return confirm('{{ $isLockedHarian ? 'Buka kunci nilai harian ini?' : 'Kunci nilai harian ini? Guru tidak akan bisa mengubah nilai.' }}')">
+                                    @csrf
+                                    <input type="hidden" name="mata_pelajaran_id" value="{{ $selectedMapel }}">
+                                    <input type="hidden" name="jenis" value="harian">
+                                    <button type="submit" class="btn btn-sm px-3 fw-semibold {{ $isLockedHarian ? 'btn-outline-success' : 'btn-outline-danger' }}">
+                                        @if($isLockedHarian)
+                                            <i class="bi bi-unlock-fill me-1"></i> Buka Kunci
+                                        @else
+                                            <i class="bi bi-lock-fill me-1"></i> Kunci Nilai
+                                        @endif
+                                    </button>
+                                </form>
+                            @endif
                         </div>
 
                         @if(count($students) > 0)
@@ -148,7 +169,8 @@
                                                             name="nilai[{{ $siswa->id }}][lm1_tp{{ $tp }}]" 
                                                             class="form-control form-control-sm text-center tp-input" 
                                                             data-lm="1" data-tp="{{ $tp }}"
-                                                            value="{{ $rec && $rec->{'lm1_tp'.$tp} !== null ? floatval($rec->{'lm1_tp'.$tp}) : '' }}">
+                                                            value="{{ $rec && $rec->{'lm1_tp'.$tp} !== null ? floatval($rec->{'lm1_tp'.$tp}) : '' }}"
+                                                            {{ $isLockedHarian ? 'disabled' : '' }}>
                                                     </td>
                                                 @endfor
 
@@ -159,7 +181,8 @@
                                                             name="nilai[{{ $siswa->id }}][lm2_tp{{ $tp }}]" 
                                                             class="form-control form-control-sm text-center tp-input" 
                                                             data-lm="2" data-tp="{{ $tp }}"
-                                                            value="{{ $rec && $rec->{'lm2_tp'.$tp} !== null ? floatval($rec->{'lm2_tp'.$tp}) : '' }}">
+                                                            value="{{ $rec && $rec->{'lm2_tp'.$tp} !== null ? floatval($rec->{'lm2_tp'.$tp}) : '' }}"
+                                                            {{ $isLockedHarian ? 'disabled' : '' }}>
                                                     </td>
                                                 @endfor
 
@@ -170,7 +193,8 @@
                                                             name="nilai[{{ $siswa->id }}][lm3_tp{{ $tp }}]" 
                                                             class="form-control form-control-sm text-center tp-input" 
                                                             data-lm="3" data-tp="{{ $tp }}"
-                                                            value="{{ $rec && $rec->{'lm3_tp'.$tp} !== null ? floatval($rec->{'lm3_tp'.$tp}) : '' }}">
+                                                            value="{{ $rec && $rec->{'lm3_tp'.$tp} !== null ? floatval($rec->{'lm3_tp'.$tp}) : '' }}"
+                                                            {{ $isLockedHarian ? 'disabled' : '' }}>
                                                     </td>
                                                 @endfor
 
@@ -181,7 +205,8 @@
                                                             name="nilai[{{ $siswa->id }}][lm4_tp{{ $tp }}]" 
                                                             class="form-control form-control-sm text-center tp-input" 
                                                             data-lm="4" data-tp="{{ $tp }}"
-                                                            value="{{ $rec && $rec->{'lm4_tp'.$tp} !== null ? floatval($rec->{'lm4_tp'.$tp}) : '' }}">
+                                                            value="{{ $rec && $rec->{'lm4_tp'.$tp} !== null ? floatval($rec->{'lm4_tp'.$tp}) : '' }}"
+                                                            {{ $isLockedHarian ? 'disabled' : '' }}>
                                                     </td>
                                                 @endfor
 
@@ -192,7 +217,8 @@
                                                             name="nilai[{{ $siswa->id }}][lm5_tp{{ $tp }}]" 
                                                             class="form-control form-control-sm text-center tp-input" 
                                                             data-lm="5" data-tp="{{ $tp }}"
-                                                            value="{{ $rec && $rec->{'lm5_tp'.$tp} !== null ? floatval($rec->{'lm5_tp'.$tp}) : '' }}">
+                                                            value="{{ $rec && $rec->{'lm5_tp'.$tp} !== null ? floatval($rec->{'lm5_tp'.$tp}) : '' }}"
+                                                            {{ $isLockedHarian ? 'disabled' : '' }}>
                                                     </td>
                                                 @endfor
 
@@ -214,7 +240,14 @@
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-3">
-                                <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Simpan Nilai Harian</button>
+                                @if($isLockedHarian)
+                                    <div class="alert alert-warning py-2 px-3 mb-0 d-flex align-items-center gap-2">
+                                        <i class="bi bi-lock-fill"></i>
+                                        <span>Nilai Harian telah dikunci. Hubungi admin untuk membuka kunci.</span>
+                                    </div>
+                                @else
+                                    <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Simpan Nilai Harian</button>
+                                @endif
                             </div>
                         </form>
                         @else

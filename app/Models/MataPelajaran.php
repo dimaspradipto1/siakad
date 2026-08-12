@@ -26,11 +26,19 @@ class MataPelajaran extends Model
         'hari_mengajar',
         'jam_mengajar',
         'status',
+        'is_locked_harian',
+        'is_locked_mid',
+        'is_locked_pas',
+        'is_locked_raport',
     ];
 
     protected $casts = [
-        'tp_optimal'     => 'array',
-        'tp_peningkatan' => 'array',
+        'tp_optimal'       => 'array',
+        'tp_peningkatan'   => 'array',
+        'is_locked_harian' => 'boolean',
+        'is_locked_mid'    => 'boolean',
+        'is_locked_pas'    => 'boolean',
+        'is_locked_raport' => 'boolean',
     ];
 
     public function kelas(): BelongsTo

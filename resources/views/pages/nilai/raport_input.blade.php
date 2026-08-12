@@ -85,9 +85,34 @@
                 @if($selectedTa && $selectedSem && $selectedKelas && $selectedMapel)
                 <div class="card shadow-sm border-0">
                     <div class="card-body pt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title text-primary fw-bold p-0 mb-0">Form Input Nilai Raport</h5>
-                            <button type="button" class="btn btn-info btn-sm text-white px-3" id="btn-auto-calc"><i class="bi bi-cpu"></i> Isi Nilai Rapot dari Rata-rata</button>
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="card-title text-primary fw-bold p-0 mb-0">Form Input Nilai Raport</h5>
+                                @if($isLockedRaport)
+                                    <span class="badge bg-danger px-3 py-2" style="font-size:0.82rem;">🔒 Terkunci</span>
+                                @else
+                                    <span class="badge bg-success px-3 py-2" style="font-size:0.82rem;">🔓 Terbuka</span>
+                                @endif
+                            </div>
+                            <div class="d-flex gap-2">
+                                @if(!$isLockedRaport)
+                                    <button type="button" class="btn btn-info btn-sm text-white px-3" id="btn-auto-calc"><i class="bi bi-cpu"></i> Isi Nilai Rapot dari Rata-rata</button>
+                                @endif
+                                @if($isAdmin && $selectedMapel)
+                                    <form method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline" onsubmit="return confirm('{{ $isLockedRaport ? 'Buka kunci nilai Raport ini?' : 'Kunci nilai Raport ini? Guru tidak akan bisa mengubah nilai.' }}')">
+                                        @csrf
+                                        <input type="hidden" name="mata_pelajaran_id" value="{{ $selectedMapel }}">
+                                        <input type="hidden" name="jenis" value="raport">
+                                        <button type="submit" class="btn btn-sm px-3 fw-semibold {{ $isLockedRaport ? 'btn-outline-success' : 'btn-outline-danger' }}">
+                                            @if($isLockedRaport)
+                                                <i class="bi bi-unlock-fill me-1"></i> Buka Kunci
+                                            @else
+                                                <i class="bi bi-lock-fill me-1"></i> Kunci Nilai
+                                            @endif
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
 
                         @if(count($students) > 0)
@@ -146,7 +171,8 @@
                                                     <input type="number" step="1" min="0" max="100"
                                                         name="nilai[{{ $siswa->id }}][nilai_raport]"
                                                         class="form-control text-center score-input raport-input"
-                                                        value="{{ $rec && $rec->nilai_raport !== null ? intval($rec->nilai_raport) : '' }}">
+                                                        value="{{ $rec && $rec->nilai_raport !== null ? intval($rec->nilai_raport) : '' }}"
+                                                        {{ $isLockedRaport ? 'disabled' : '' }}>
                                                 </td>
 
                                                 {{-- TP Optimal: checkboxes --}}
@@ -158,7 +184,8 @@
                                                                     name="nilai[{{ $siswa->id }}][tp_optimal][]"
                                                                     value="{{ $opt }}"
                                                                     id="opt_{{ $siswa->id }}_{{ $loop->index }}"
-                                                                    {{ in_array($opt, $savedOptimal) ? 'checked' : '' }}>
+                                                                    {{ in_array($opt, $savedOptimal) ? 'checked' : '' }}
+                                                                    {{ $isLockedRaport ? 'disabled' : '' }}>
                                                                 <label class="form-check-label small" for="opt_{{ $siswa->id }}_{{ $loop->index }}">
                                                                     {{ $opt }}
                                                                 </label>
@@ -178,7 +205,8 @@
                                                                     name="nilai[{{ $siswa->id }}][tp_perlu_peningkatan][]"
                                                                     value="{{ $opt }}"
                                                                     id="pkt_{{ $siswa->id }}_{{ $loop->index }}"
-                                                                    {{ in_array($opt, $savedPeningkatan) ? 'checked' : '' }}>
+                                                                    {{ in_array($opt, $savedPeningkatan) ? 'checked' : '' }}
+                                                                    {{ $isLockedRaport ? 'disabled' : '' }}>
                                                                 <label class="form-check-label small" for="pkt_{{ $siswa->id }}_{{ $loop->index }}">
                                                                     {{ $opt }}
                                                                 </label>
@@ -195,7 +223,14 @@
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-3">
-                                <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Simpan Nilai Raport</button>
+                                @if($isLockedRaport)
+                                    <div class="alert alert-warning py-2 px-3 mb-0 d-flex align-items-center gap-2">
+                                        <i class="bi bi-lock-fill"></i>
+                                        <span>Nilai Raport telah dikunci. Hubungi admin untuk membuka kunci.</span>
+                                    </div>
+                                @else
+                                    <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Simpan Nilai Raport</button>
+                                @endif
                             </div>
                         </form>
                         @else

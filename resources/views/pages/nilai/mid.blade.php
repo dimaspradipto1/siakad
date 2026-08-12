@@ -85,7 +85,30 @@
                 @if($selectedTa && $selectedSem && $selectedKelas && $selectedMapel)
                 <div class="card shadow-sm border-0">
                     <div class="card-body pt-4">
-                        <h5 class="card-title text-primary fw-bold mb-3 p-0">Form Input Nilai MID (UTS)</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="card-title text-primary fw-bold p-0 mb-0">Form Input Nilai MID (UTS)</h5>
+                                @if($isLockedMid)
+                                    <span class="badge bg-danger px-3 py-2" style="font-size:0.82rem;">🔒 Terkunci</span>
+                                @else
+                                    <span class="badge bg-success px-3 py-2" style="font-size:0.82rem;">🔓 Terbuka</span>
+                                @endif
+                            </div>
+                            @if($isAdmin && $selectedMapel)
+                                <form method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline" onsubmit="return confirm('{{ $isLockedMid ? 'Buka kunci nilai MID ini?' : 'Kunci nilai MID ini? Guru tidak akan bisa mengubah nilai.' }}')">
+                                    @csrf
+                                    <input type="hidden" name="mata_pelajaran_id" value="{{ $selectedMapel }}">
+                                    <input type="hidden" name="jenis" value="mid">
+                                    <button type="submit" class="btn btn-sm px-3 fw-semibold {{ $isLockedMid ? 'btn-outline-success' : 'btn-outline-danger' }}">
+                                        @if($isLockedMid)
+                                            <i class="bi bi-unlock-fill me-1"></i> Buka Kunci
+                                        @else
+                                            <i class="bi bi-lock-fill me-1"></i> Kunci Nilai
+                                        @endif
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
 
                         @if(count($students) > 0)
                         <form action="{{ route('nilai.mid.save') }}" method="POST">
@@ -116,13 +139,15 @@
                                                     <input type="number" step="0.1" min="0" max="100" 
                                                         name="nilai[{{ $siswa->id }}][nilai_mid]" 
                                                         class="form-control text-center score-input" 
-                                                        value="{{ $siswa->nilai_record && $siswa->nilai_record->nilai_mid !== null ? floatval($siswa->nilai_record->nilai_mid) : '' }}">
+                                                        value="{{ $siswa->nilai_record && $siswa->nilai_record->nilai_mid !== null ? floatval($siswa->nilai_record->nilai_mid) : '' }}"
+                                                        {{ $isLockedMid ? 'disabled' : '' }}>
                                                 </td>
                                                 <td>
                                                     <input type="number" step="0.1" min="0" max="100" 
                                                         name="nilai[{{ $siswa->id }}][nilai_mid_plus]" 
                                                         class="form-control text-center score-input" 
-                                                        value="{{ $siswa->nilai_record && $siswa->nilai_record->nilai_mid_plus !== null ? floatval($siswa->nilai_record->nilai_mid_plus) : '' }}">
+                                                        value="{{ $siswa->nilai_record && $siswa->nilai_record->nilai_mid_plus !== null ? floatval($siswa->nilai_record->nilai_mid_plus) : '' }}"
+                                                        {{ $isLockedMid ? 'disabled' : '' }}>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -131,7 +156,14 @@
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-3">
-                                <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Simpan Nilai MID</button>
+                                @if($isLockedMid)
+                                    <div class="alert alert-warning py-2 px-3 mb-0 d-flex align-items-center gap-2">
+                                        <i class="bi bi-lock-fill"></i>
+                                        <span>Nilai MID telah dikunci. Hubungi admin untuk membuka kunci.</span>
+                                    </div>
+                                @else
+                                    <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Simpan Nilai MID</button>
+                                @endif
                             </div>
                         </form>
                         @else

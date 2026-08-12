@@ -381,7 +381,14 @@ class NilaiController extends Controller
             }
         }
 
-        return view('pages.nilai.harian', compact('mapels', 'kelas', 'semesters', 'tahunAjarans', 'selectedTa', 'selectedSem', 'selectedKelas', 'selectedMapel', 'students'));
+        $isLockedHarian = false;
+        $isAdmin = $user && $user->roles === 'admin';
+        if ($selectedMapel) {
+            $mapelObj = MataPelajaran::find($selectedMapel);
+            $isLockedHarian = $mapelObj ? (bool) $mapelObj->is_locked_harian : false;
+        }
+
+        return view('pages.nilai.harian', compact('mapels', 'kelas', 'semesters', 'tahunAjarans', 'selectedTa', 'selectedSem', 'selectedKelas', 'selectedMapel', 'students', 'isLockedHarian', 'isAdmin'));
     }
 
     public function harianSave(Request $request)
@@ -397,6 +404,13 @@ class NilaiController extends Controller
         $taId = $request->tahun_ajaran_id;
         $semId = $request->semester_id;
         $mapelId = $request->mata_pelajaran_id;
+
+        $mapel = MataPelajaran::findOrFail($mapelId);
+        if ($mapel->is_locked_harian) {
+            alert()->error('Gagal!', 'Nilai Harian telah dikunci.');
+            return back();
+        }
+
         $gradesInput = $request->nilai;
 
         foreach ($gradesInput as $siswaId => $data) {
@@ -524,7 +538,14 @@ class NilaiController extends Controller
             }
         }
 
-        return view('pages.nilai.mid', compact('mapels', 'kelas', 'semesters', 'tahunAjarans', 'selectedTa', 'selectedSem', 'selectedKelas', 'selectedMapel', 'students'));
+        $isLockedMid = false;
+        $isAdmin = $user && $user->roles === 'admin';
+        if ($selectedMapel) {
+            $mapelObj = MataPelajaran::find($selectedMapel);
+            $isLockedMid = $mapelObj ? (bool) $mapelObj->is_locked_mid : false;
+        }
+
+        return view('pages.nilai.mid', compact('mapels', 'kelas', 'semesters', 'tahunAjarans', 'selectedTa', 'selectedSem', 'selectedKelas', 'selectedMapel', 'students', 'isLockedMid', 'isAdmin'));
     }
 
     public function midSave(Request $request)
@@ -540,6 +561,13 @@ class NilaiController extends Controller
         $taId = $request->tahun_ajaran_id;
         $semId = $request->semester_id;
         $mapelId = $request->mata_pelajaran_id;
+
+        $mapel = MataPelajaran::findOrFail($mapelId);
+        if ($mapel->is_locked_mid) {
+            alert()->error('Gagal!', 'Nilai MID telah dikunci.');
+            return back();
+        }
+
         $gradesInput = $request->nilai;
 
         foreach ($gradesInput as $siswaId => $data) {
@@ -620,7 +648,14 @@ class NilaiController extends Controller
             }
         }
 
-        return view('pages.nilai.pas', compact('mapels', 'kelas', 'semesters', 'tahunAjarans', 'selectedTa', 'selectedSem', 'selectedKelas', 'selectedMapel', 'students'));
+        $isLockedPas = false;
+        $isAdmin = $user && $user->roles === 'admin';
+        if ($selectedMapel) {
+            $mapelObj = MataPelajaran::find($selectedMapel);
+            $isLockedPas = $mapelObj ? (bool) $mapelObj->is_locked_pas : false;
+        }
+
+        return view('pages.nilai.pas', compact('mapels', 'kelas', 'semesters', 'tahunAjarans', 'selectedTa', 'selectedSem', 'selectedKelas', 'selectedMapel', 'students', 'isLockedPas', 'isAdmin'));
     }
 
     public function pasSave(Request $request)
@@ -636,6 +671,13 @@ class NilaiController extends Controller
         $taId = $request->tahun_ajaran_id;
         $semId = $request->semester_id;
         $mapelId = $request->mata_pelajaran_id;
+
+        $mapel = MataPelajaran::findOrFail($mapelId);
+        if ($mapel->is_locked_pas) {
+            alert()->error('Gagal!', 'Nilai PAS telah dikunci.');
+            return back();
+        }
+
         $gradesInput = $request->nilai;
 
         foreach ($gradesInput as $siswaId => $data) {
@@ -767,7 +809,14 @@ class NilaiController extends Controller
             }
         }
 
-        return view('pages.nilai.raport_input', compact('mapels', 'kelas', 'semesters', 'tahunAjarans', 'selectedTa', 'selectedSem', 'selectedKelas', 'selectedMapel', 'students', 'tpOptimalOptions', 'tpPeningkatanOptions'));
+        $isLockedRaport = false;
+        $isAdmin = $user && $user->roles === 'admin';
+        if ($selectedMapel) {
+            $mapelObj = MataPelajaran::find($selectedMapel);
+            $isLockedRaport = $mapelObj ? (bool) $mapelObj->is_locked_raport : false;
+        }
+
+        return view('pages.nilai.raport_input', compact('mapels', 'kelas', 'semesters', 'tahunAjarans', 'selectedTa', 'selectedSem', 'selectedKelas', 'selectedMapel', 'students', 'tpOptimalOptions', 'tpPeningkatanOptions', 'isLockedRaport', 'isAdmin'));
     }
 
     public function raportInputSave(Request $request)
@@ -783,6 +832,13 @@ class NilaiController extends Controller
         $taId = $request->tahun_ajaran_id;
         $semId = $request->semester_id;
         $mapelId = $request->mata_pelajaran_id;
+
+        $mapel = MataPelajaran::findOrFail($mapelId);
+        if ($mapel->is_locked_raport) {
+            alert()->error('Gagal!', 'Nilai Raport telah dikunci.');
+            return back();
+        }
+
         $gradesInput = $request->nilai;
 
         foreach ($gradesInput as $siswaId => $data) {
@@ -829,6 +885,43 @@ class NilaiController extends Controller
         }
 
         alert()->html('Berhasil!', 'Data Nilai Raport berhasil disimpan.', 'success');
+        return back();
+    }
+
+    // ----------------------------------------------------
+    // PENGUNCIAN NILAI (Admin Only)
+    // ----------------------------------------------------
+    public function lockToggle(Request $request)
+    {
+        $user = auth()->user();
+
+        // Hanya admin yang bisa mengunci/membuka nilai
+        if (!$user || $user->roles !== 'admin') {
+            alert()->error('Akses Ditolak', 'Hanya admin yang dapat mengunci atau membuka nilai.');
+            return back();
+        }
+
+        $request->validate([
+            'mata_pelajaran_id' => 'required|exists:mata_pelajarans,id',
+            'jenis'             => 'required|in:harian,mid,pas,raport',
+        ]);
+
+        $mapel = MataPelajaran::findOrFail($request->mata_pelajaran_id);
+        $column = 'is_locked_' . $request->jenis;
+
+        $newStatus = !$mapel->$column;
+        $mapel->update([$column => $newStatus]);
+
+        $jenisLabel = [
+            'harian'  => 'Nilai Harian',
+            'mid'     => 'Nilai MID',
+            'pas'     => 'Nilai PAS',
+            'raport'  => 'Nilai Raport',
+        ][$request->jenis];
+
+        $statusLabel = $newStatus ? 'dikunci 🔒' : 'dibuka kuncinya 🔓';
+        alert()->html('Berhasil!', "{$jenisLabel} berhasil {$statusLabel} untuk mata pelajaran <strong>{$mapel->nama_mata_pelajaran}</strong>.", 'success');
+
         return back();
     }
 
@@ -998,17 +1091,13 @@ class NilaiController extends Controller
                 ->pluck('mata_pelajaran_id');
 
             $classMapels = MataPelajaran::query()
-                ->where(function($q) use ($selectedKelas, $selectedTa, $selectedSem, $mapelIdsFromGrades) {
-                    $q->where(function($sub) use ($selectedKelas, $selectedTa, $selectedSem) {
-                        $sub->where('kelas_id', $selectedKelas)
-                            ->where('tahun_ajaran_id', $selectedTa)
-                            ->where('semester_id', $selectedSem);
-                    })
-                    ->orWhereIn('id', $mapelIdsFromGrades);
-                })
+                ->where('kelas_id', $selectedKelas)
+                ->where('tahun_ajaran_id', $selectedTa)
+                ->where('semester_id', $selectedSem)
                 ->orderBy('nama_mata_pelajaran', 'asc')
                 ->get()
-                ->unique('nama_mata_pelajaran');
+                ->unique('nama_mata_pelajaran')
+                ->values();
 
             $studentsList = $siswaOptions;
             if ($selectedSiswa) {
@@ -1138,7 +1227,9 @@ class NilaiController extends Controller
             ->where('tahun_ajaran_id', $tahun_ajaran_id)
             ->where('semester_id', $semester_id)
             ->orderBy('nama_mata_pelajaran', 'asc')
-            ->get();
+            ->get()
+            ->unique('nama_mata_pelajaran')
+            ->values();
 
         $grades = [];
         foreach ($classMapels as $mp) {
@@ -1311,7 +1402,9 @@ class NilaiController extends Controller
                 ->where('tahun_ajaran_id', $selectedTa)
                 ->where('semester_id', $selectedSem)
                 ->orderBy('nama_mata_pelajaran', 'asc')
-                ->get();
+                ->get()
+                ->unique('nama_mata_pelajaran')
+                ->values();
 
             foreach ($classMapels as $mp) {
                 $nilaiRecord = Nilai::query()->where('siswa_id', $siswa->id)

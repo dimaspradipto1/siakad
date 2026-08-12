@@ -83,7 +83,7 @@ class DashboardController extends Controller
 
             return view('layouts.dashboard.index', compact(
                 'user', 'activeRole', 'totalPegawai', 'guruCount', 'adminCount', 'kebersihanCount',
-                'totalSiswa', 'siswaCountByTingkat', 'kehadiranPercentage',
+                'totalSiswa', 'siswaCountByTingkat', 'kehadiranPercentage', 'hadirCount',
                 'akademikPercentage', 'schoolProfile', 'chartData'
             ));
         }

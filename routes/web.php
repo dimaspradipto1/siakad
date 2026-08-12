@@ -115,6 +115,9 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::get('nilai/cetak-raport', [NilaiController::class, 'cetakRaportList'])->name('nilai.cetak-raport');
     Route::get('nilai/cetak-raport/print/{siswa_id}/{tahun_ajaran_id}/{semester_id}', [NilaiController::class, 'cetakRaportPrint'])->name('nilai.cetak-raport.print');
 
+    // Penguncian Nilai (admin only)
+    Route::post('nilai/lock/toggle', [NilaiController::class, 'lockToggle'])->name('nilai.lock.toggle');
+
     Route::get('nilai/raport/personal', [NilaiController::class, 'cetakRaportPersonal'])->name('nilai.raport.personal');
     Route::get('kehadiran/personal', [KehadiranController::class, 'rekapKehadiranPersonal'])->name('kehadiran.personal');
     Route::get('ekstrakurikuler-personal', [EkstrakurikulerController::class, 'rekapEkskulPersonal'])->name('ekstrakurikuler.personal');

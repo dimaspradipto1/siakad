@@ -104,7 +104,7 @@
                         <div class="card-body pt-4 text-center d-flex flex-column justify-content-between">
                             <div>
                                 <h5 class="text-secondary fw-semibold mb-2" style="font-size: 1.15rem;">Jumlah Pegawai</h5>
-                                <div class="text-secondary mb-3" style="letter-spacing: 4px; font-size: 1.2rem; opacity: 0.5;">••••••••••</div>
+                                <h2 class="text-dark fw-bold display-5 mb-3">{{ $totalPegawai ?? 0 }}</h2>
                             </div>
                             <div class="d-flex justify-content-center gap-3 text-secondary" style="font-size: 0.85rem;">
                                 <div><strong class="text-dark d-block mb-1" style="font-size: 1.25rem;">{{ $guruCount }}</strong> Guru</div>
@@ -123,7 +123,7 @@
                         <div class="card-body pt-4 text-center d-flex flex-column justify-content-between">
                             <div>
                                 <h5 class="text-white-50 fw-semibold mb-2" style="font-size: 1.15rem;">Jumlah Siswa</h5>
-                                <div class="text-white-50 mb-3" style="letter-spacing: 4px; font-size: 1.2rem; opacity: 0.5;">••••••••••</div>
+                                <h2 class="text-white fw-bold display-5 mb-3">{{ $totalSiswa ?? 0 }}</h2>
                             </div>
                             <div class="d-flex justify-content-center gap-3 text-white-50 px-2" style="font-size: 0.85rem;">
                                 @for ($t = 1; $t <= 6; $t++)
@@ -146,7 +146,7 @@
                         <div class="card-body pt-4 text-center d-flex flex-column justify-content-between">
                             <div>
                                 <h5 class="text-secondary fw-semibold mb-2" style="font-size: 1.15rem;">Kehadiran Siswa</h5>
-                                <div class="text-secondary mb-3" style="letter-spacing: 4px; font-size: 1.2rem; opacity: 0.5;">••••••••••</div>
+                                <h2 class="text-dark fw-bold display-5 mb-3">{{ $hadirCount ?? 0 }}</h2>
                             </div>
                             <p class="text-secondary mb-0 fw-semibold" style="font-size: 0.95rem;">Naik 1.2% dibanding Kemarin</p>
                         </div>
