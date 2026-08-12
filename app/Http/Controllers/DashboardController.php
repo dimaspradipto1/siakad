@@ -96,20 +96,28 @@ class DashboardController extends Controller
         }
 
         if ($user && $activeRole === 'orang tua') {
-            $orangTua = \App\Models\OrangTua::where('user_id', $user->id)->first();
-            if (!$orangTua) {
-                $orangTua = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
-                    ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                    ->first();
-                if (!$orangTua) {
-                    $orangTua = \App\Models\OrangTua::whereNull('user_id')->first();
-                }
-                if ($orangTua) {
-                    $orangTua->update(['user_id' => $user->id]);
-                }
+            $orangTuaIds = \App\Models\OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
+
+            if ($user->email) {
+                $extraIds = \App\Models\OrangTua::where('email', $user->email)->pluck('id')->toArray();
+                $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
             }
 
-            $children = $orangTua ? Siswa::where('orang_tua_id', $orangTua->id)->get() : collect([]);
+            if ($user->name) {
+                $nameBase = trim(explode(',', $user->name)[0]);
+                $extraIds = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
+                    ->orWhere('nama_ibu', 'like', '%' . $nameBase . '%')
+                    ->pluck('id')->toArray();
+                $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
+            }
+
+            if (!empty($orangTuaIds)) {
+                \App\Models\OrangTua::whereIn('id', $orangTuaIds)->whereNull('user_id')->update(['user_id' => $user->id]);
+                $children = Siswa::whereIn('orang_tua_id', $orangTuaIds)->get();
+            } else {
+                $children = collect([]);
+            }
+
             if ($children->isEmpty()) {
                 $children = Siswa::limit(2)->get();
             }

@@ -311,20 +311,30 @@ class SiswaController extends Controller
                 $orangTua = $siswa->orangTua;
             }
         } elseif ($user->roles === 'orang tua') {
-            $orangTua = OrangTua::where('user_id', $user->id)->first();
-            if (!$orangTua) {
-                $orangTua = OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
-                    ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                    ->first();
-                if (!$orangTua) {
-                    $orangTua = OrangTua::whereNull('user_id')->first();
+            $selectedChildId = session('selected_child_id');
+            if ($selectedChildId) {
+                $siswa = Siswa::find($selectedChildId);
+            }
+            if (!$siswa) {
+                $orangTuaIds = OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
+                if ($user->email) {
+                    $extraIds = OrangTua::where('email', $user->email)->pluck('id')->toArray();
+                    $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
                 }
-                if ($orangTua) {
-                    $orangTua->update(['user_id' => $user->id]);
+                if ($user->name) {
+                    $nameBase = trim(explode(',', $user->name)[0]);
+                    $extraIds = OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
+                        ->orWhere('nama_ibu', 'like', '%' . $nameBase . '%')
+                        ->pluck('id')->toArray();
+                    $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
+                }
+                if (!empty($orangTuaIds)) {
+                    OrangTua::whereIn('id', $orangTuaIds)->whereNull('user_id')->update(['user_id' => $user->id]);
+                    $siswa = Siswa::whereIn('orang_tua_id', $orangTuaIds)->first();
                 }
             }
-            if ($orangTua) {
-                $siswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
+            if ($siswa) {
+                $orangTua = $siswa->orangTua;
             }
         }
 

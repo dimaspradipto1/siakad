@@ -51,6 +51,7 @@
                                 <label for="kelas_id" class="form-label fw-semibold text-dark">Kelas</label>
                                 <select id="kelas_id" class="form-select py-2" style="border-radius: 8px;">
                                     <option value="" disabled selected></option>
+                                    <option value="Semua Kelas">Semua Kelas</option>
                                     @foreach($kelas as $k)
                                         <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
                                     @endforeach
@@ -61,6 +62,7 @@
                                 <label for="nama_mata_pelajaran" class="form-label fw-semibold text-dark">Mata Pelajaran</label>
                                 <select id="nama_mata_pelajaran" class="form-select py-2" style="border-radius: 8px;">
                                     <option value="" disabled selected></option>
+                                    <option value="Semua Mapel">Semua Mapel</option>
                                     @foreach($mapels as $mp)
                                         <option value="{{ $mp->nama_mata_pelajaran }}">{{ $mp->nama_mata_pelajaran }}</option>
                                     @endforeach
@@ -79,6 +81,14 @@
                     </div>
                 </div>
 
+                <style>
+                    #pengumuman-table td:nth-child(3) {
+                        text-align: left !important;
+                        white-space: normal !important;
+                        word-break: break-word !important;
+                        min-width: 250px !important;
+                    }
+                </style>
                 <div class="card shadow-sm border-0" style="border-radius: 12px;">
                     <div class="card-body pt-4">
                         <div class="table-responsive" style="overflow: visible;">

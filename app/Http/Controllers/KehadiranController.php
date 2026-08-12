@@ -170,15 +170,20 @@ class KehadiranController extends Controller
             
             $studentsList = Siswa::query()->whereIn('id', $siswaIds)->orderBy('nama_siswa', 'asc')->get();
 
+            $selectedMapelModel = MataPelajaran::find($selectedMapel);
+            $matchingMapelIds = $selectedMapelModel
+                ? MataPelajaran::where('nama_mata_pelajaran', $selectedMapelModel->nama_mata_pelajaran)->pluck('id')->toArray()
+                : ($selectedMapel ? [$selectedMapel] : []);
+
             foreach ($studentsList as $siswa) {
                 // Fetch attendance
                 $kehadiranRecord = Kehadiran::query()->where('siswa_id', $siswa->id)
-                    ->where('mata_pelajaran_id', $selectedMapel)
+                    ->whereIn('mata_pelajaran_id', $matchingMapelIds)
                     ->where('tanggal', $selectedTanggal)
                     ->first();
                 
                 // Fetch student note (CatatanSiswa)
-                $mapel = MataPelajaran::find($selectedMapel);
+                $mapel = $selectedMapelModel;
                 $guruId = $mapel ? $mapel->guru_id : null;
                 if (!$guruId && $isGuru) {
                     $guruId = $user->pegawai?->guru?->id;
@@ -216,10 +221,10 @@ class KehadiranController extends Controller
         if ($isGuru) {
             $guru = $user->pegawai?->guru;
             $guruId = $guru ? $guru->id : 0;
-            $mapels = MataPelajaran::query()->where('guru_id', $guruId)
+            $mapelsRaw = MataPelajaran::query()->where('guru_id', $guruId)
                 ->where('tahun_ajaran_id', $taId)
                 ->where('semester_id', $semId)
-                ->get(['id', 'nama_mata_pelajaran']);
+                ->get();
             
             $kelas = Kelas::query()
                 ->whereIn('id', MataPelajaran::query()->where('guru_id', $guruId)
@@ -229,11 +234,15 @@ class KehadiranController extends Controller
                 )
                 ->orderBy('nama_kelas', 'asc')
                 ->get(['id', 'nama_kelas']);
+
+            $mapels = $mapelsRaw->unique('nama_mata_pelajaran')->values();
         } else {
             $mapels = MataPelajaran::query()
                 ->where('tahun_ajaran_id', $taId)
                 ->where('semester_id', $semId)
-                ->get(['id', 'nama_mata_pelajaran']);
+                ->get()
+                ->unique('nama_mata_pelajaran')
+                ->values();
             
             $kelas = Kelas::query()
                 ->orderBy('nama_kelas', 'asc')

@@ -1,29 +1,5 @@
 @extends('layouts.dashboard.template')
 
-@php
-if (!function_exists('abbreviateMapel')) {
-    function abbreviateMapel($name) {
-        $map = [
-            'Pendidikan Agama Islam' => 'PAI',
-            'Pendidikan Agama Islam dan Budi Pekerti' => 'PAI',
-            'Pendidikan Pancasila dan Kewarganegaraan' => 'PKN',
-            'Pendidikan Pancasila' => 'PKN',
-            'Bahasa Indonesia' => 'B.INDO',
-            'Matematika' => 'MTK',
-            'Ilmu Pengetahuan Alam dan Sosial' => 'IPAS',
-            'Ilmu Pengetahuan Alam' => 'IPA',
-            'Ilmu Pengetahuan Sosial' => 'IPS',
-            'Seni Budaya dan Prakarya' => 'SBDP',
-            'Seni Budaya dan Musik' => 'SBDM',
-            'Seni Rupa' => 'Seni Rupa',
-            'Bahasa Inggris' => 'B.ING',
-            'Pendidikan Jasmani, Olahraga, dan Kesehatan' => 'PJOK',
-        ];
-        return $map[$name] ?? $name;
-    }
-}
-@endphp
-
 @section('title', 'Rekap Nilai')
 
 @section('content')
@@ -109,8 +85,11 @@ if (!function_exists('abbreviateMapel')) {
                                         <th style="width: 120px;">NISN</th>
                                         <th class="text-start">Nama Siswa</th>
                                         @foreach($classMapels as $mp)
-                                            <th>{{ abbreviateMapel($mp->nama_mata_pelajaran) }}</th>
+                                            <th>{{ $mp->nama_mata_pelajaran }}</th>
                                         @endforeach
+                                        <th class="table-success" style="width: 100px;">Rata2</th>
+                                    </tr>
+                                </thead>
                                         <th class="table-success" style="width: 100px;">Rata2</th>
                                     </tr>
                                 </thead>

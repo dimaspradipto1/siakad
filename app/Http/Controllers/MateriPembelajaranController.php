@@ -76,20 +76,24 @@ class MateriPembelajaranController extends Controller
             if ($user->roles === 'siswa') {
                 $mySiswa = \App\Models\Siswa::where('user_id', $user->id)->first();
             } else {
-                $orangTua = \App\Models\OrangTua::where('user_id', $user->id)->first();
-                if (!$orangTua) {
-                    $orangTua = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
-                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                        ->first();
+                $selectedChildId = session('selected_child_id');
+                if ($selectedChildId) {
+                    $mySiswa = \App\Models\Siswa::find($selectedChildId);
                 }
-                if ($orangTua) {
-                    $selectedChildId = session('selected_child_id');
-                    if ($selectedChildId) {
-                        $mySiswa = \App\Models\Siswa::where('id', $selectedChildId)->where('orang_tua_id', $orangTua->id)->first();
+                if (!$mySiswa) {
+                    $orangTuaIds = \App\Models\OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
+                    if ($user->email) {
+                        $extraIds = \App\Models\OrangTua::where('email', $user->email)->pluck('id')->toArray();
+                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
                     }
-                    if (!$mySiswa) {
-                        $mySiswa = \App\Models\Siswa::where('orang_tua_id', $orangTua->id)->first();
+                    if ($user->name) {
+                        $nameBase = trim(explode(',', $user->name)[0]);
+                        $extraIds = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
+                            ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
+                            ->pluck('id')->toArray();
+                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
                     }
+                    $mySiswa = !empty($orangTuaIds) ? \App\Models\Siswa::whereIn('orang_tua_id', $orangTuaIds)->first() : null;
                 }
             }
         }

@@ -304,11 +304,64 @@
                         $countNilai++;
                     }
 
+                    if (!function_exists('parseTpList')) {
+                        function parseTpList($value): array {
+                            if (empty($value)) return [];
+
+                            if (is_array($value)) {
+                                $result = [];
+                                foreach ($value as $item) {
+                                    $result = array_merge($result, parseTpList($item));
+                                }
+                                return array_values(array_unique(array_filter($result)));
+                            }
+
+                            if (is_string($value)) {
+                                $value = trim($value);
+                                if ($value === '') return [];
+
+                                $decoded = json_decode($value, true);
+                                if (json_last_error() === JSON_ERROR_NONE && !is_null($decoded) && $decoded !== $value) {
+                                    return parseTpList($decoded);
+                                }
+
+                                $cleaned = str_replace(['\"', '\\"'], '"', $value);
+                                $cleaned = trim($cleaned, '[]"\'\\');
+                                $cleaned = trim($cleaned);
+
+                                if ($cleaned !== '') {
+                                    return [$cleaned];
+                                }
+                            }
+
+                            return [];
+                        }
+                    }
+
+                    if (!function_exists('formatTpNumberedText')) {
+                        function formatTpNumberedText($value, $fallback = '-'): string {
+                            $items = parseTpList($value);
+                            if (empty($items)) {
+                                return $fallback;
+                            }
+
+                            $lines = [];
+                            foreach ($items as $idx => $item) {
+                                $lines[] = ($idx + 1) . '. ' . e($item);
+                            }
+
+                            return implode('<br>', $lines);
+                        }
+                    }
+
                     $tpOptimalSiswa = $rec->tp_optimal ?? null;
                     $tpPeningkatanSiswa = $rec->tp_perlu_peningkatan ?? null;
 
-                    $optText = $tpOptimalSiswa ?: $mp->tp_optimal ?: 'Menunjukkan penguasaan kompetensi dengan sangat baik.';
-                    $impText = $tpPeningkatanSiswa ?: $mp->tp_peningkatan ?: 'Perlu bimbingan lebih lanjut untuk meningkatkan kompetensi.';
+                    $rawOpt = $tpOptimalSiswa ?: $mp->tp_optimal;
+                    $rawImp = $tpPeningkatanSiswa ?: $mp->tp_peningkatan;
+
+                    $optText = formatTpNumberedText($rawOpt, 'Menunjukkan penguasaan kompetensi dengan sangat baik.');
+                    $impText = formatTpNumberedText($rawImp, 'Perlu bimbingan lebih lanjut untuk meningkatkan kompetensi.');
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
@@ -319,8 +372,8 @@
                         {{ $nilai !== null ? terbilang($nilai) : '-' }}
                     </td>
                     <td class="text-center fw-bold">{{ $predikat !== null ? $predikat : '-' }}</td>
-                    <td class="text-start" style="font-size: 11px;">{{ $optText }}</td>
-                    <td class="text-start" style="font-size: 11px;">{{ $impText }}</td>
+                    <td class="text-start" style="font-size: 11px;">{!! $optText !!}</td>
+                    <td class="text-start" style="font-size: 11px;">{!! $impText !!}</td>
                 </tr>
             @endforeach
         </tbody>

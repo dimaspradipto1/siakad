@@ -21,7 +21,7 @@ class PengumumanDataTable extends DataTable
                 return $p->user ? $p->user->name : '-';
             })
             ->addColumn('keterangan_short', function ($p) {
-                return Str::limit($p->keterangan, 50);
+                return nl2br(e($p->keterangan));
             })
             ->addColumn('created_at', function ($p) {
                 return \Carbon\Carbon::parse($p->created_at)->locale('id')->translatedFormat('l, d F Y');
@@ -72,7 +72,7 @@ class PengumumanDataTable extends DataTable
             ->filterColumn('mata_pelajaran', function($query, $keyword) {
                 $query->whereHas('mataPelajaran', fn($q) => $q->where('nama_mata_pelajaran', 'like', "%{$keyword}%"));
             })
-            ->rawColumns(['action'])
+            ->rawColumns(['action', 'keterangan_short'])
             ->setRowId('id');
     }
 
@@ -86,20 +86,24 @@ class PengumumanDataTable extends DataTable
             if ($user->roles === 'siswa') {
                 $siswa = \App\Models\Siswa::where('user_id', $user->id)->first();
             } else {
-                $ortu = \App\Models\OrangTua::where('user_id', $user->id)->first();
-                if (!$ortu) {
-                    $ortu = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
-                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                        ->first();
+                $selectedChildId = session('selected_child_id');
+                if ($selectedChildId) {
+                    $siswa = \App\Models\Siswa::find($selectedChildId);
                 }
-                if ($ortu) {
-                    $selectedChildId = session('selected_child_id');
-                    if ($selectedChildId) {
-                        $siswa = \App\Models\Siswa::where('id', $selectedChildId)->where('orang_tua_id', $ortu->id)->first();
+                if (!$siswa) {
+                    $orangTuaIds = \App\Models\OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
+                    if ($user->email) {
+                        $extraIds = \App\Models\OrangTua::where('email', $user->email)->pluck('id')->toArray();
+                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
                     }
-                    if (!$siswa) {
-                        $siswa = \App\Models\Siswa::where('orang_tua_id', $ortu->id)->first();
+                    if ($user->name) {
+                        $nameBase = trim(explode(',', $user->name)[0]);
+                        $extraIds = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
+                            ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
+                            ->pluck('id')->toArray();
+                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
                     }
+                    $siswa = !empty($orangTuaIds) ? \App\Models\Siswa::whereIn('orang_tua_id', $orangTuaIds)->first() : null;
                 }
             }
 
@@ -132,13 +136,21 @@ class PengumumanDataTable extends DataTable
             });
         }
         if ($request->filled('kelas_id')) {
-            $query->where('kelas_id', $request->kelas_id);
+            if (in_array($request->kelas_id, ['Semua Kelas', 'semua', 'null'])) {
+                $query->whereNull('kelas_id');
+            } else {
+                $query->where('kelas_id', $request->kelas_id);
+            }
         }
         if ($request->filled('nama_mata_pelajaran')) {
             $mapelName = $request->nama_mata_pelajaran;
-            $query->whereHas('mataPelajaran', function($q) use ($mapelName) {
-                $q->where('nama_mata_pelajaran', $mapelName);
-            });
+            if (in_array($mapelName, ['Semua Mapel', 'semua', 'null'])) {
+                $query->whereNull('mata_pelajaran_id');
+            } else {
+                $query->whereHas('mataPelajaran', function($q) use ($mapelName) {
+                    $q->where('nama_mata_pelajaran', $mapelName);
+                });
+            }
         }
         
         return $query;
@@ -167,7 +179,12 @@ class PengumumanDataTable extends DataTable
         $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false),
             Column::make('judul')->title('Judul'),
-            Column::make('keterangan_short')->title('Isi Pengumuman')->searchable(false)->orderable(false),
+            Column::make('keterangan_short')
+                ->title('Isi Pengumuman')
+                ->searchable(false)
+                ->orderable(false)
+                ->addClass('text-start')
+                ->style('min-width: 250px; white-space: normal; word-break: break-word;'),
             Column::make('user')->title('Dipublikasikan Oleh')->orderable(false),
             Column::make('created_at')->title('Tanggal Dibuat'),
             Column::make('tahun_ajaran')->title('Tahun Ajaran')->orderable(false),

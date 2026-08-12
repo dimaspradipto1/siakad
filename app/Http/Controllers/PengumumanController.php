@@ -69,20 +69,24 @@ class PengumumanController extends Controller
             if ($user->roles === 'siswa') {
                 $siswa = \App\Models\Siswa::where('user_id', $user->id)->first();
             } else {
-                $ortu = \App\Models\OrangTua::where('user_id', $user->id)->first();
-                if (!$ortu) {
-                    $ortu = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
-                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                        ->first();
+                $selectedChildId = session('selected_child_id');
+                if ($selectedChildId) {
+                    $siswa = \App\Models\Siswa::find($selectedChildId);
                 }
-                if ($ortu) {
-                    $selectedChildId = session('selected_child_id');
-                    if ($selectedChildId) {
-                        $siswa = \App\Models\Siswa::where('id', $selectedChildId)->where('orang_tua_id', $ortu->id)->first();
+                if (!$siswa) {
+                    $orangTuaIds = \App\Models\OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
+                    if ($user->email) {
+                        $extraIds = \App\Models\OrangTua::where('email', $user->email)->pluck('id')->toArray();
+                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
                     }
-                    if (!$siswa) {
-                        $siswa = \App\Models\Siswa::where('orang_tua_id', $ortu->id)->first();
+                    if ($user->name) {
+                        $nameBase = trim(explode(',', $user->name)[0]);
+                        $extraIds = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
+                            ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
+                            ->pluck('id')->toArray();
+                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
                     }
+                    $siswa = !empty($orangTuaIds) ? \App\Models\Siswa::whereIn('orang_tua_id', $orangTuaIds)->first() : null;
                 }
             }
 

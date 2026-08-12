@@ -847,8 +847,8 @@ class NilaiController extends Controller
                 [
                     'nilai_rata2'          => $rata2,
                     'nilai_raport'         => $nilaiRaport,
-                    'tp_optimal'           => $tpOptimal ? json_encode($tpOptimal) : null,
-                    'tp_perlu_peningkatan' => $tpPeningkatan ? json_encode($tpPeningkatan) : null,
+                    'tp_optimal'           => !empty($tpOptimal) ? $tpOptimal : null,
+                    'tp_perlu_peningkatan' => !empty($tpPeningkatan) ? $tpPeningkatan : null,
                     'nilai'                => $nilaiRaport,
                     'predikat'             => $predikat,
                 ]
@@ -1048,8 +1048,9 @@ class NilaiController extends Controller
                 $count = 0;
                 
                 foreach ($classMapels as $mp) {
+                    $matchingMapelIds = MataPelajaran::where('nama_mata_pelajaran', $mp->nama_mata_pelajaran)->pluck('id')->toArray();
                     $nilaiRecord = Nilai::query()->where('siswa_id', $siswa->id)
-                        ->where('mata_pelajaran_id', $mp->id)
+                        ->whereIn('mata_pelajaran_id', $matchingMapelIds)
                         ->where('semester_id', $selectedSem)
                         ->where('tahun_ajaran_id', $selectedTa)
                         ->first();
