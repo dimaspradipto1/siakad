@@ -5,13 +5,19 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>@yield('title', 'Dashboard') - SIAKAD SD Negeri 007 Sekupang</title>
-  <meta content="Sistem Informasi Akademik SD Negeri 007 Sekupang" name="description">
-  <meta content="SIAKAD, akademik, sekolah, Sekupang" name="keywords">
+  @php
+      $tmplFaviconUrl = ($schoolProfile && $schoolProfile->logo_sekolah) 
+          ? asset($schoolProfile->logo_sekolah) 
+          : asset('assets/img/favicon.png');
+      $tmplSchoolName = $schoolProfile->nama_sekolah ?? 'SD Negeri 007 Sekupang';
+  @endphp
+  <title>@yield('title', 'Dashboard') - SIAKAD {{ $tmplSchoolName }}</title>
+  <meta content="Sistem Informasi Akademik {{ $tmplSchoolName }}" name="description">
+  <meta content="SIAKAD, akademik, sekolah, {{ $tmplSchoolName }}" name="keywords">
 
   <!-- Favicons -->
-  <link href="{{ asset('assets/img/favicon.png') }}?v=2" rel="icon">
-  <link href="{{ asset('assets/img/apple-touch-icon.png') }}?v=2" rel="apple-touch-icon">
+  <link href="{{ $tmplFaviconUrl }}" rel="icon">
+  <link href="{{ $tmplFaviconUrl }}" rel="apple-touch-icon">
 
   <!-- Google Fonts -->
   <link href="https://fonts.gstatic.com" rel="preconnect">

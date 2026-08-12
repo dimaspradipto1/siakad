@@ -17,6 +17,7 @@ use App\DataTables\MateriPembelajaranDataTable;
 class MateriPembelajaranController extends Controller
 {
     use \App\Traits\AuthorizeTransactionData;
+    use \App\Traits\ResolvesStudentFromUser;
 
     private function getWaliKelasIds($user): array
     {
@@ -73,29 +74,7 @@ class MateriPembelajaranController extends Controller
         $mySiswa = null;
 
         if ($isPersonal) {
-            if ($user->roles === 'siswa') {
-                $mySiswa = \App\Models\Siswa::where('user_id', $user->id)->first();
-            } else {
-                $selectedChildId = session('selected_child_id');
-                if ($selectedChildId) {
-                    $mySiswa = \App\Models\Siswa::find($selectedChildId);
-                }
-                if (!$mySiswa) {
-                    $orangTuaIds = \App\Models\OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
-                    if ($user->email) {
-                        $extraIds = \App\Models\OrangTua::where('email', $user->email)->pluck('id')->toArray();
-                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
-                    }
-                    if ($user->name) {
-                        $nameBase = trim(explode(',', $user->name)[0]);
-                        $extraIds = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
-                            ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                            ->pluck('id')->toArray();
-                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
-                    }
-                    $mySiswa = !empty($orangTuaIds) ? \App\Models\Siswa::whereIn('orang_tua_id', $orangTuaIds)->first() : null;
-                }
-            }
+            $mySiswa = $this->resolveStudentForCurrentUser();
         }
 
         if ($isPersonal && $mySiswa) {

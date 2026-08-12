@@ -29,6 +29,7 @@ use App\Exports\NilaiTemplateExport;
 class NilaiController extends Controller
 {
     use \App\Traits\AuthorizeTransactionData;
+    use \App\Traits\ResolvesStudentFromUser;
 
     public function index(NilaiDataTable $dataTable, Request $request)
     {
@@ -38,35 +39,7 @@ class NilaiController extends Controller
         }
 
         if (auth()->check() && in_array($user->roles, ['siswa', 'orang tua'])) {
-            $siswa = null;
-            if ($user->roles === 'siswa') {
-                $siswa = Siswa::where('user_id', $user->id)->first();
-                if (!$siswa) {
-                    $siswa = Siswa::where('nama_siswa', 'like', '%' . $user->name . '%')->first();
-                    if (!$siswa) {
-                        $siswa = Siswa::whereNull('user_id')->first();
-                    }
-                    if ($siswa) {
-                        $siswa->update(['user_id' => $user->id]);
-                    }
-                }
-            } elseif ($user->roles === 'orang tua') {
-                $orangTua = OrangTua::where('user_id', $user->id)->first();
-                if (!$orangTua) {
-                    $orangTua = OrangTua::where('nama_ayah', 'like', '%' . $user->name . '%')
-                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                        ->first();
-                    if (!$orangTua) {
-                        $orangTua = OrangTua::whereNull('user_id')->first();
-                    }
-                    if ($orangTua) {
-                        $orangTua->update(['user_id' => $user->id]);
-                    }
-                }
-                if ($orangTua) {
-                    $siswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
-                }
-            }
+            $siswa = $this->resolveStudentForCurrentUser();
 
             if (!$siswa) {
                 alert()->error('Error', 'Data siswa tidak ditemukan.');

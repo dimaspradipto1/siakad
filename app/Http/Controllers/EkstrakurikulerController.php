@@ -17,6 +17,7 @@ use App\Models\OrangTua;
 class EkstrakurikulerController extends Controller
 {
     use \App\Traits\AuthorizeMasterData;
+    use \App\Traits\ResolvesStudentFromUser;
     public function index(EkstrakurikulerDataTable $dataTable)
     {
         if (auth()->check() && auth()->user()->roles === 'wali kelas') {
@@ -213,15 +214,7 @@ class EkstrakurikulerController extends Controller
     public function rekapEkskulPersonal(\Illuminate\Http\Request $request)
     {
         $user = auth()->user();
-        $siswa = null;
-        if ($user->roles === 'siswa') {
-            $siswa = Siswa::where('user_id', $user->id)->first();
-        } elseif ($user->roles === 'orang tua') {
-            $orangTua = OrangTua::where('user_id', $user->id)->first();
-            if ($orangTua) {
-                $siswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
-            }
-        }
+        $siswa = $this->resolveStudentForCurrentUser();
 
         if (!$siswa) {
             alert()->error('Error', 'Data siswa tidak ditemukan.');

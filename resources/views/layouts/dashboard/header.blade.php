@@ -2,8 +2,13 @@
   <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
+      @php
+          $headerLogoUrl = ($schoolProfile && $schoolProfile->logo_sekolah) 
+              ? asset($schoolProfile->logo_sekolah) 
+              : asset('assets/img/logo.png');
+      @endphp
       <a href="{{ route('dashboard') }}" class="logo d-flex align-items-center">
-        <img src="{{ asset('assets/img/logo.png') }}" alt="Logo" style="max-height: 26px; margin-right: 8px;">
+        <img src="{{ $headerLogoUrl }}" alt="Logo" style="max-height: 26px; margin-right: 8px;">
         <span class="d-none d-lg-block fw-bold">SIAKAD</span>
       </a>
       <i class="bi bi-list toggle-sidebar-btn"></i>

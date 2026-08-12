@@ -15,6 +15,7 @@ use App\DataTables\PengumumanDataTable;
 class PengumumanController extends Controller
 {
     use \App\Traits\AuthorizeTransactionData;
+    use \App\Traits\ResolvesStudentFromUser;
     private function getWaliKelasIds($user): array
     {
         if (!$user) return [];
@@ -65,30 +66,7 @@ class PengumumanController extends Controller
         $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
 
         if ($user && in_array($user->roles, ['siswa', 'orang tua'])) {
-            $siswa = null;
-            if ($user->roles === 'siswa') {
-                $siswa = \App\Models\Siswa::where('user_id', $user->id)->first();
-            } else {
-                $selectedChildId = session('selected_child_id');
-                if ($selectedChildId) {
-                    $siswa = \App\Models\Siswa::find($selectedChildId);
-                }
-                if (!$siswa) {
-                    $orangTuaIds = \App\Models\OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
-                    if ($user->email) {
-                        $extraIds = \App\Models\OrangTua::where('email', $user->email)->pluck('id')->toArray();
-                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
-                    }
-                    if ($user->name) {
-                        $nameBase = trim(explode(',', $user->name)[0]);
-                        $extraIds = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
-                            ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                            ->pluck('id')->toArray();
-                        $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
-                    }
-                    $siswa = !empty($orangTuaIds) ? \App\Models\Siswa::whereIn('orang_tua_id', $orangTuaIds)->first() : null;
-                }
-            }
+            $siswa = $this->resolveStudentForCurrentUser();
 
             if ($siswa) {
                 $studentKelasIds = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)

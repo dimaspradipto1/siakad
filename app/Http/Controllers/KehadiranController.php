@@ -25,6 +25,7 @@ use App\DataTables\KehadiranDataTable;
 class KehadiranController extends Controller
 {
     use \App\Traits\AuthorizeTransactionData;
+    use \App\Traits\ResolvesStudentFromUser;
 
     private const BULAN_LABELS = [
         1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
@@ -669,15 +670,7 @@ class KehadiranController extends Controller
     public function rekapKehadiranPersonal(Request $request)
     {
         $user = auth()->user();
-        $siswa = null;
-        if ($user->roles === 'siswa') {
-            $siswa = Siswa::where('user_id', $user->id)->first();
-        } elseif ($user->roles === 'orang tua') {
-            $orangTua = OrangTua::where('user_id', $user->id)->first();
-            if ($orangTua) {
-                $siswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
-            }
-        }
+        $siswa = $this->resolveStudentForCurrentUser();
 
         if (!$siswa) {
             alert()->error('Error', 'Data siswa tidak ditemukan.');

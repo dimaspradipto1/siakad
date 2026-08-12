@@ -8,9 +8,19 @@
     <meta name="description" content="Sistem Informasi Akademik SD Negeri 007 Sekupang - Login">
     <meta name="keywords" content="SIAKAD, SD Negeri 007, Sekupang, Akademik">
 
+    @php
+        $schoolLogoUrl = ($schoolProfile && $schoolProfile->logo_sekolah) 
+            ? asset($schoolProfile->logo_sekolah) 
+            : asset('assets/img/logo.png');
+        $schoolFaviconUrl = ($schoolProfile && $schoolProfile->logo_sekolah) 
+            ? asset($schoolProfile->logo_sekolah) 
+            : asset('assets/img/favicon.png');
+        $schoolName = $schoolProfile->nama_sekolah ?? 'SD NEGERI 007 SEKUPANG';
+    @endphp
+
     <!-- Favicons -->
-    <link href="{{ asset('assets/img/favicon.png') }}?v=2" rel="icon">
-    <link href="{{ asset('assets/img/apple-touch-icon.png') }}?v=2" rel="apple-touch-icon">
+    <link href="{{ $schoolFaviconUrl }}" rel="icon">
+    <link href="{{ $schoolFaviconUrl }}" rel="apple-touch-icon">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -378,10 +388,10 @@
         <!-- Brand / Logo -->
         <div class="brand-section">
             <div class="brand-icon">
-                <img src="{{ asset('assets/img/logo.png') }}" alt="Logo" style="max-height: 60px; max-width: 60px; object-fit: contain;">
+                <img src="{{ $schoolLogoUrl }}" alt="Logo" style="max-height: 60px; max-width: 60px; object-fit: contain;">
             </div>
             <div class="brand-title">SIAKAD</div>
-            <div class="brand-subtitle">SD NEGERI 007 SEKUPANG</div>
+            <div class="brand-subtitle">{{ strtoupper($schoolName) }}</div>
             <div class="brand-subtitle">Sistem Informasi Akademik</div>
         </div>
 

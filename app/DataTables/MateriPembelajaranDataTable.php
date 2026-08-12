@@ -19,6 +19,7 @@ use Carbon\Carbon;
 
 class MateriPembelajaranDataTable extends DataTable
 {
+    use \App\Traits\ResolvesStudentFromUser;
     /**
      * Build the DataTable class.
      *
@@ -122,26 +123,7 @@ class MateriPembelajaranDataTable extends DataTable
         // Role-based visibility
         $user = auth()->user();
         if ($user && in_array($user->roles, ['siswa', 'orang tua'])) {
-            $siswa = null;
-            if ($user->roles === 'siswa') {
-                $siswa = Siswa::query()->where('user_id', $user->id)->first();
-            } else {
-                $orangTua = OrangTua::query()->where('user_id', $user->id)->first();
-                if (!$orangTua) {
-                    $orangTua = OrangTua::query()->where('nama_ayah', 'like', '%' . $user->name . '%')
-                        ->orWhere('nama_ibu', 'like', '%' . $user->name . '%')
-                        ->first();
-                }
-                if ($orangTua) {
-                    $selectedChildId = session('selected_child_id');
-                    if ($selectedChildId) {
-                        $siswa = Siswa::where('id', $selectedChildId)->where('orang_tua_id', $orangTua->id)->first();
-                    }
-                    if (!$siswa) {
-                        $siswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
-                    }
-                }
-            }
+            $siswa = $this->resolveStudentForCurrentUser();
 
             if ($siswa) {
                 $studentKelasIds = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)->pluck('kelas_id')->toArray();
