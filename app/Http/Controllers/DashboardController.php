@@ -118,9 +118,7 @@ class DashboardController extends Controller
                 $children = collect([]);
             }
 
-            if ($children->isEmpty()) {
-                $children = Siswa::limit(2)->get();
-            }
+
 
             $hideNav = true;
             return view('layouts.dashboard.index', compact('user', 'activeRole', 'children', 'hideNav'));

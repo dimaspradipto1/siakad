@@ -11,9 +11,7 @@ class GuruExport implements FromCollection, WithHeadings, WithMapping
 {
     public function collection()
     {
-        return Guru::whereHas('pegawai.user', function($q) {
-            $q->where('roles', 'guru');
-        })->with('pegawai')->get();
+        return Guru::with('pegawai')->get();
     }
 
     public function headings(): array

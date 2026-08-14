@@ -86,4 +86,25 @@ class Siswa extends Model
     {
         return $this->hasMany(CatatanSiswa::class, 'siswa_id');
     }
+
+    public function pembagianKelas(): HasMany
+    {
+        return $this->hasMany(PembagianKelas::class, 'siswa_id');
+    }
+
+    public function getKelasAktifAttribute()
+    {
+        $pk = $this->pembagianKelas()
+            ->whereHas('tahunAjaran', function($q) {
+                $q->where('status', 'Aktif');
+            })
+            ->latest('id')
+            ->first();
+
+        if ($pk && $pk->kelas) {
+            return $pk->kelas;
+        }
+
+        return $this->kelas;
+    }
 }

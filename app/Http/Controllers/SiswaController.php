@@ -70,12 +70,8 @@ class SiswaController extends Controller
             $orangTuaId = $orangTua->id;
         }
 
-        // 2. Resolve Kelas ID
-        $kelasId = $request->kelas_id;
-        if (!$kelasId) {
-            $firstKelas = Kelas::first();
-            $kelasId = $firstKelas ? $firstKelas->id : 1;
-        }
+        // 2. Resolve Kelas ID (nullable until Pembagian Kelas is assigned)
+        $kelasId = $request->filled('kelas_id') ? $request->kelas_id : null;
 
         // 3. Process Student User Account
         $usernameSiswa = preg_replace('/[^A-Za-z0-9]/', '', strtolower($request->nisn));
@@ -236,7 +232,7 @@ class SiswaController extends Controller
             'alamat' => $request->alamat,
             'tgl_masuk' => $request->tgl_masuk,
             'status' => $request->status,
-            'kelas_id' => $request->kelas_id ?: $siswa->kelas_id,
+            'kelas_id' => $request->filled('kelas_id') ? $request->kelas_id : null,
             'ekstrakurikuler_id' => $request->ekstrakurikuler_id,
         ]);
 

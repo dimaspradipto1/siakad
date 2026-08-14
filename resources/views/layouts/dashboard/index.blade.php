@@ -256,8 +256,10 @@
                                             </div>
                                             <h5 class="fw-bold text-dark mb-1" style="font-size: 1.05rem;">{{ $child->nama_siswa }}</h5>
                                             <p class="text-muted small mb-3">
-                                                @if($child->kelas)
-                                                    <span class="badge bg-secondary mb-1">Kelas {{ $child->kelas->nama_kelas }}</span><br>
+                                                @if($child->kelasAktif)
+                                                    <span class="badge bg-secondary mb-1">Kelas {{ $child->kelasAktif->nama_kelas }}</span><br>
+                                                @else
+                                                    <span class="badge bg-light text-muted border mb-1">Belum Ada Pembagian Kelas</span><br>
                                                 @endif
                                                 <span class="fw-semibold text-secondary" style="font-size: 0.85rem;">{{ $child->nisn ? 'NISN. '.$child->nisn : 'No NISN' }}</span>
                                             </p>

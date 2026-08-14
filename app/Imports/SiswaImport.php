@@ -76,9 +76,8 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
             $orangTuaId = $orangTua->id;
         }
 
-        // 2. Resolve Kelas ID
-        $firstKelas = Kelas::first();
-        $kelasId = $firstKelas ? $firstKelas->id : 1;
+        // 2. Resolve Kelas ID (nullable until Pembagian Kelas is assigned)
+        $kelasId = null;
 
         // 3. Process Student User Account
         $nisn = $row['nisn'];
