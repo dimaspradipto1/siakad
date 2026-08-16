@@ -25,11 +25,9 @@ class GuruController extends Controller
      */
     public function create()
     {
-        // Hanya menampilkan pegawai dengan role/jabatan Guru yang belum terdaftar di tabel guru
-        $pegawais = Pegawai::where(function ($q) {
-            $q->whereHas('user', function ($u) {
-                $u->where('roles', 'guru');
-            })->orWhere('jabatan', 'LIKE', '%Guru%');
+        // Hanya menampilkan pegawai dengan role Guru yang belum terdaftar di tabel guru
+        $pegawais = Pegawai::whereHas('user', function ($u) {
+            $u->whereRaw('LOWER(roles) = ?', ['guru']);
         })
         ->whereDoesntHave('guru')
         ->orderBy('nama_pegawai')
@@ -72,10 +70,8 @@ class GuruController extends Controller
     public function edit(Guru $guru)
     {
         // Ambil pegawai ber-role Guru yang belum menjadi guru, ATAU yang sedang di-edit saat ini
-        $pegawais = Pegawai::where(function ($q) {
-            $q->whereHas('user', function ($u) {
-                $u->where('roles', 'guru');
-            })->orWhere('jabatan', 'LIKE', '%Guru%');
+        $pegawais = Pegawai::whereHas('user', function ($u) {
+            $u->whereRaw('LOWER(roles) = ?', ['guru']);
         })
         ->where(function ($q) use ($guru) {
             $q->whereDoesntHave('guru')

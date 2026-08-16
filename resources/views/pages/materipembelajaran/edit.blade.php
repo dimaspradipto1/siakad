@@ -41,9 +41,14 @@
                             <div class="col-md-6">
                                 <label for="semester_name" class="form-label fw-semibold text-dark">Semester <span class="text-danger">*</span></label>
                                 <select id="semester_name" name="semester_name" class="form-select py-2 @error('semester_name') is-invalid @enderror" style="border-radius: 8px;">
-                                    <option value="" disabled></option>
-                                    <option value="Semester 1 (Ganjil)" {{ old('semester_name', $materipembelajaran->semester ? $materipembelajaran->semester->nama_semester : '') == 'Semester 1 (Ganjil)' ? 'selected' : '' }}>Semester 1 (Ganjil)</option>
-                                    <option value="Semester 2 (Genap)" {{ old('semester_name', $materipembelajaran->semester ? $materipembelajaran->semester->nama_semester : '') == 'Semester 2 (Genap)' ? 'selected' : '' }}>Semester 2 (Genap)</option>
+                                    <option value="" disabled>-- Pilih Semester --</option>
+                                    @if(isset($semesters))
+                                        @foreach($semesters as $sem)
+                                            <option value="{{ $sem->nama_semester }}" {{ old('semester_name', $materipembelajaran->semester ? $materipembelajaran->semester->nama_semester : '') == $sem->nama_semester ? 'selected' : '' }}>
+                                                {{ $sem->nama_semester }}
+                                            </option>
+                                        @endforeach
+                                    @endif
                                 </select>
                                 @error('semester_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>

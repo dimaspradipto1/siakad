@@ -85,33 +85,33 @@
                 @if($selectedTa && $selectedSem && $selectedKelas && $selectedMapel)
                 <div class="card shadow-sm border-0">
                     <div class="card-body pt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <h5 class="card-title text-primary fw-bold p-0 mb-0">Form Input Nilai MID (UTS)</h5>
-                                @if($isLockedMid)
-                                    <span class="badge bg-danger px-3 py-2" style="font-size:0.82rem;">🔒 Terkunci</span>
-                                @else
-                                    <span class="badge bg-success px-3 py-2" style="font-size:0.82rem;">🔓 Terbuka</span>
-                                @endif
-                            </div>
-                            @if($isAdmin && $selectedMapel)
-                                <form method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline" onsubmit="return confirm('{{ $isLockedMid ? 'Buka kunci nilai MID ini?' : 'Kunci nilai MID ini? Guru tidak akan bisa mengubah nilai.' }}')">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <h5 class="card-title text-primary fw-bold p-0 mb-0">Form Input Nilai MID (UTS)</h5>
+                            @if($isLockedMid)
+                                <span class="badge bg-danger px-3 py-2" style="font-size:0.82rem;">🔒 Terkunci</span>
+                            @else
+                                <span class="badge bg-success px-3 py-2" style="font-size:0.82rem;">🔓 Terbuka</span>
+                            @endif
+                            @if($selectedMapel)
+                                <form id="form-lock-toggle" method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline ms-1">
                                     @csrf
                                     <input type="hidden" name="mata_pelajaran_id" value="{{ $selectedMapel }}">
                                     <input type="hidden" name="jenis" value="mid">
-                                    <button type="submit" class="btn btn-sm px-3 fw-semibold {{ $isLockedMid ? 'btn-outline-success' : 'btn-outline-danger' }}">
-                                        @if($isLockedMid)
+                                    @if($isLockedMid)
+                                        <button type="button" class="btn btn-sm px-3 fw-semibold btn-outline-success" style="border-radius: 6px;" onclick="handleUnlockNilai('Nilai MID')">
                                             <i class="bi bi-unlock-fill me-1"></i> Buka Kunci
-                                        @else
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn btn-sm px-3 fw-semibold btn-outline-danger" style="border-radius: 6px;" onclick="handleLockNilai('Nilai MID', 'form-nilai-mid')">
                                             <i class="bi bi-lock-fill me-1"></i> Kunci Nilai
-                                        @endif
-                                    </button>
+                                        </button>
+                                    @endif
                                 </form>
                             @endif
                         </div>
 
                         @if(count($students) > 0)
-                        <form action="{{ route('nilai.mid.save') }}" method="POST">
+                        <form id="form-nilai-mid" action="{{ route('nilai.mid.save') }}" method="POST">
                             @csrf
                             <input type="hidden" name="tahun_ajaran_id" value="{{ $selectedTa }}">
                             <input type="hidden" name="semester_id" value="{{ $selectedSem }}">
@@ -124,7 +124,7 @@
                                         <tr>
                                             <th style="width: 60px;">No</th>
                                             <th style="width: 150px;">NISN</th>
-                                            <th class="text-start">Nama Siswa</th>
+                                            <th class="text-start px-3">Nama Siswa</th>
                                             <th style="width: 180px;">Nilai MID (UTS)</th>
                                             <th style="width: 180px;">Nilai Mid+</th>
                                         </tr>
@@ -132,20 +132,20 @@
                                     <tbody>
                                         @foreach($students as $index => $siswa)
                                             <tr>
-                                                <td>{{ $index + 1 }}</td>
-                                                <td>{{ $siswa->nisn }}</td>
-                                                <td class="text-start fw-semibold">{{ $siswa->nama_siswa }}</td>
-                                                <td>
+                                                <td class="align-middle fw-semibold">{{ $index + 1 }}</td>
+                                                <td class="align-middle">{{ $siswa->nisn }}</td>
+                                                <td class="text-start fw-bold align-middle px-3 text-dark">{{ $siswa->nama_siswa }}</td>
+                                                <td class="align-middle">
                                                     <input type="number" step="0.1" min="0" max="100" 
                                                         name="nilai[{{ $siswa->id }}][nilai_mid]" 
-                                                        class="form-control text-center score-input" 
+                                                        class="form-control form-control-sm text-center score-input mx-auto fw-bold" 
                                                         value="{{ $siswa->nilai_record && $siswa->nilai_record->nilai_mid !== null ? floatval($siswa->nilai_record->nilai_mid) : '' }}"
                                                         {{ $isLockedMid ? 'disabled' : '' }}>
                                                 </td>
-                                                <td>
+                                                <td class="align-middle">
                                                     <input type="number" step="0.1" min="0" max="100" 
                                                         name="nilai[{{ $siswa->id }}][nilai_mid_plus]" 
-                                                        class="form-control text-center score-input" 
+                                                        class="form-control form-control-sm text-center score-input mx-auto fw-bold" 
                                                         value="{{ $siswa->nilai_record && $siswa->nilai_record->nilai_mid_plus !== null ? floatval($siswa->nilai_record->nilai_mid_plus) : '' }}"
                                                         {{ $isLockedMid ? 'disabled' : '' }}>
                                                 </td>
@@ -159,7 +159,7 @@
                                 @if($isLockedMid)
                                     <div class="alert alert-warning py-2 px-3 mb-0 d-flex align-items-center gap-2">
                                         <i class="bi bi-lock-fill"></i>
-                                        <span>Nilai MID telah dikunci. Hubungi admin untuk membuka kunci.</span>
+                                        <span>Nilai MID telah dikunci. Buka kunci nilai jika ingin melakukan pengeditan.</span>
                                     </div>
                                 @else
                                     <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Simpan Nilai MID</button>
@@ -197,3 +197,57 @@
         }
     </style>
 @endsection
+
+@push('script')
+<script>
+function handleLockNilai(jenisName, formId) {
+    Swal.fire({
+        title: 'Kunci ' + jenisName + '?',
+        html: 'Nilai yang Anda masukkan akan <strong>disimpan dan langsung dikunci</strong>.<br><small class="text-muted">Setelah dikunci, nilai tidak dapat diubah kembali sampai dibuka kuncinya.</small>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-lock-fill me-1"></i> Ya, Simpan & Kunci',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formNilai = document.getElementById(formId);
+            if (formNilai) {
+                let lockInput = document.getElementById('input-auto-lock');
+                if (!lockInput) {
+                    lockInput = document.createElement('input');
+                    lockInput.type = 'hidden';
+                    lockInput.id = 'input-auto-lock';
+                    lockInput.name = 'auto_lock';
+                    formNilai.appendChild(lockInput);
+                }
+                lockInput.value = '1';
+                formNilai.submit();
+            } else {
+                document.getElementById('form-lock-toggle').submit();
+            }
+        }
+    });
+}
+
+function handleUnlockNilai(jenisName) {
+    Swal.fire({
+        title: 'Buka Kunci ' + jenisName + '?',
+        text: 'Kunci nilai akan dibuka agar Anda dapat mengedit kembali data nilai.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('form-lock-toggle').submit();
+        }
+    });
+}
+</script>
+@endpush

@@ -36,9 +36,14 @@
                             <div class="col-md-6">
                                 <label for="semester_name" class="form-label fw-semibold">Semester <span class="text-danger">*</span></label>
                                 <select name="semester_name" id="semester_name" class="form-select" required>
-                                    <option value="" disabled selected>-- Pilih Semester --</option>
-                                    <option value="Semester 1 (Ganjil)" {{ $selectedSemName == 'Semester 1 (Ganjil)' ? 'selected' : '' }}>Semester 1 (Ganjil)</option>
-                                    <option value="Semester 2 (Genap)" {{ $selectedSemName == 'Semester 2 (Genap)' ? 'selected' : '' }}>Semester 2 (Genap)</option>
+                                    <option value="" disabled {{ empty($selectedSemName) ? 'selected' : '' }}>-- Pilih Semester --</option>
+                                    @if(isset($semesters))
+                                        @foreach($semesters as $sem)
+                                            <option value="{{ $sem->nama_semester }}" {{ $selectedSemName == $sem->nama_semester ? 'selected' : '' }}>
+                                                {{ $sem->nama_semester }}
+                                            </option>
+                                        @endforeach
+                                    @endif
                                 </select>
                             </div>
 

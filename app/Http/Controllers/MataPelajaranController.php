@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Facades\Excel;
 class MataPelajaranController extends Controller
 {
     use \App\Traits\AuthorizeMasterData;
+    use \App\Traits\ResolvesStudentFromUser;
     public function index(MataPelajaranDataTable $dataTable)
     {
         return $dataTable->render('pages.mata-pelajaran.index');
@@ -179,27 +180,24 @@ class MataPelajaranController extends Controller
         $mySiswa = null;
 
         if ($isPersonal) {
-            if ($user->roles === 'siswa') {
-                $mySiswa = \App\Models\Siswa::where('user_id', $user->id)->first();
-            } else {
-                $orangTua = \App\Models\OrangTua::where('user_id', $user->id)->first();
-                if ($orangTua) {
-                    $mySiswa = \App\Models\Siswa::where('orang_tua_id', $orangTua->id)->first();
-                }
-            }
+            $mySiswa = $this->resolveStudentForCurrentUser();
         }
 
         $tahunAjarans = TahunAjaran::query()->get();
 
         $selectedTa = $request->get('tahun_ajaran_id');
-        $selectedSemName = $request->get('semester_name');
-
         if (!$selectedTa) {
             $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         if ($isPersonal && $mySiswa) {
@@ -224,10 +222,11 @@ class MataPelajaranController extends Controller
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 
@@ -242,10 +241,12 @@ class MataPelajaranController extends Controller
                 ->get();
         }
 
+        $children = $this->getChildrenForParent();
+
         return view('pages.mata-pelajaran.jadwal', compact(
-            'kelas', 'tahunAjarans',
+            'kelas', 'tahunAjarans', 'semesters',
             'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas',
-            'matapelajaran'
+            'matapelajaran', 'children', 'mySiswa'
         ));
     }
 }

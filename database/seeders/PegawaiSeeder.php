@@ -122,9 +122,27 @@ class PegawaiSeeder extends Seeder
 
         foreach ($pegawais as $pegawaiData) {
             $user = User::query()->where('name', $pegawaiData['nama_pegawai'])->first();
-            if ($user) {
-                $pegawaiData['user_id'] = $user->id;
+            if (!$user) {
+                $role = 'pegawai';
+                if (stripos($pegawaiData['jabatan'], 'Kepala Sekolah') !== false) {
+                    $role = 'kepala sekolah';
+                } elseif (stripos($pegawaiData['jabatan'], 'Wali Kelas') !== false) {
+                    $role = 'wali kelas';
+                } elseif (stripos($pegawaiData['jabatan'], 'Guru') !== false) {
+                    $role = 'guru';
+                }
+
+                $username = preg_replace('/[^A-Za-z0-9]/', '', strtolower($pegawaiData['nip']));
+                $user = User::create([
+                    'name' => $pegawaiData['nama_pegawai'],
+                    'username' => $username,
+                    'email' => $username . '@gmail.com',
+                    'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                    'roles' => $role,
+                    'is_active' => true,
+                ]);
             }
+            $pegawaiData['user_id'] = $user->id;
 
             Pegawai::updateOrCreate(
                 ['nip' => $pegawaiData['nip']],

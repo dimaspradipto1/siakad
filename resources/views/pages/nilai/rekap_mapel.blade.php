@@ -36,9 +36,14 @@
                             <div class="col-md-6">
                                 <label for="semester_name" class="form-label fw-semibold text-dark">Semester</label>
                                 <select name="semester_name" id="semester_name" class="form-select py-2" style="border-radius: 8px;" required>
-                                    <option value="" disabled selected></option>
-                                    <option value="Semester 1 (Ganjil)" {{ (isset($selectedSemName) && $selectedSemName == 'Semester 1 (Ganjil)') || (!isset($selectedSemName) && request('semester_name') == 'Semester 1 (Ganjil)') ? 'selected' : '' }}>Semester 1 (Ganjil)</option>
-                                    <option value="Semester 2 (Genap)" {{ (isset($selectedSemName) && $selectedSemName == 'Semester 2 (Genap)') || (!isset($selectedSemName) && request('semester_name') == 'Semester 2 (Genap)') ? 'selected' : '' }}>Semester 2 (Genap)</option>
+                                    <option value="" disabled {{ empty($selectedSemName) ? 'selected' : '' }}>-- Pilih Semester --</option>
+                                    @if(isset($semesters))
+                                        @foreach($semesters as $sem)
+                                            <option value="{{ $sem->nama_semester }}" {{ (isset($selectedSemName) && $selectedSemName == $sem->nama_semester) || (!isset($selectedSemName) && request('semester_name') == $sem->nama_semester) ? 'selected' : '' }}>
+                                                {{ $sem->nama_semester }}
+                                            </option>
+                                        @endforeach
+                                    @endif
                                 </select>
                             </div>
 

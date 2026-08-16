@@ -150,6 +150,51 @@
           $('.select2').select2({
               theme: 'bootstrap-5'
           });
+
+          // Global dynamic semester loader on Academic Year change
+          $(document).on('change', 'select[name="tahun_ajaran_id"], #tahun_ajaran_id, #filter_tahun_ajaran_id', function() {
+              var taId = $(this).val();
+              if (!taId) return;
+
+              var $form = $(this).closest('form');
+              var $semSelects = $form.length ? $form.find('select[name="semester_name"], select[name="semester_id"], #semester_name, #semester_id, #filter_semester_name') : $();
+              if ($semSelects.length === 0) {
+                  $semSelects = $('#semester_name, #semester_id, #filter_semester_name, select[name="semester_name"], select[name="semester_id"]');
+              }
+
+              if ($semSelects.length > 0) {
+                  $.ajax({
+                      url: '{{ url("api/semesters-by-ta") }}/' + taId,
+                      type: 'GET',
+                      dataType: 'json',
+                      success: function(data) {
+                          $semSelects.each(function() {
+                              var $select = $(this);
+                              var currentVal = $select.val();
+                              var isIdSelect = $select.attr('name') === 'semester_id' || $select.attr('id') === 'semester_id';
+                              var isFilter = $select.attr('id') === 'filter_semester_name' || ($select.find('option[value=""]').text() && $select.find('option[value=""]').text().toLowerCase().includes('semua'));
+                              
+                              $select.empty();
+                              if (isFilter) {
+                                  $select.append('<option value="">Semua Semester</option>');
+                              } else {
+                                  $select.append('<option value="" disabled selected>-- Pilih Semester --</option>');
+                              }
+                              
+                              $.each(data, function(index, sem) {
+                                  var val = isIdSelect ? sem.id : sem.nama_semester;
+                                  var selectedAttr = (currentVal == val) ? ' selected' : '';
+                                  $select.append('<option value="' + val + '"' + selectedAttr + '>' + sem.nama_semester + '</option>');
+                              });
+                              
+                              if ($select.hasClass('select2-hidden-accessible')) {
+                                  $select.trigger('change.select2');
+                              }
+                          });
+                      }
+                  });
+              }
+          });
       });
   </script>
 

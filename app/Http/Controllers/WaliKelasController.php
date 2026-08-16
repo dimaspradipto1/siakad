@@ -20,7 +20,9 @@ class WaliKelasController extends Controller
 
     public function create()
     {
-        $gurus = Guru::with('pegawai')->get();
+        $gurus = Guru::whereHas('pegawai.user', function ($u) {
+            $u->whereRaw('LOWER(roles) = ?', ['wali kelas']);
+        })->with('pegawai')->get();
         $kelas = Kelas::all();
         // Hanya ambil tahun ajaran yang aktif untuk default form, tapi tetap passing semua jika diperlukan
         $tahunAjarans = TahunAjaran::orderBy('tahun_mulai', 'desc')->get();
@@ -52,7 +54,9 @@ class WaliKelasController extends Controller
 
     public function edit(WaliKelas $walikela)
     {
-        $gurus = Guru::with('pegawai')->get();
+        $gurus = Guru::whereHas('pegawai.user', function ($u) {
+            $u->whereRaw('LOWER(roles) = ?', ['wali kelas']);
+        })->orWhere('id', $walikela->guru_id)->with('pegawai')->get();
         $kelas = Kelas::all();
         $tahunAjarans = TahunAjaran::orderBy('tahun_mulai', 'desc')->get();
 

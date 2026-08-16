@@ -54,6 +54,21 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('tahun-ajaran.*', 'semester.*') ? '' : 'collapsed' }}"
+           data-bs-target="#tahun-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-calendar3"></i><span>Tahun Ajaran & Semester</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="tahun-nav" class="nav-content collapse {{ request()->routeIs('tahun-ajaran.*', 'semester.*') ? 'show' : '' }}" data-bs-parent="#sidebar-nav">
+          <li><a href="{{ route('tahun-ajaran.index') }}" class="{{ request()->routeIs('tahun-ajaran.*') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Tahun Ajaran</span></a></li>
+          <li><a href="{{ route('semester.index') }}" class="{{ request()->routeIs('semester.*') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Semester</span></a></li>
+        </ul>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('kelas.*') ? '' : 'collapsed' }}" href="{{ route('kelas.index') }}">
+          <i class="bi bi-door-open"></i><span>Kelas</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('guru.*') ? '' : 'collapsed' }}" href="{{ route('guru.index') }}">
           <i class="bi bi-person-badge"></i><span>Guru</span>
         </a>
@@ -61,11 +76,6 @@
       <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('walikelas.*') ? '' : 'collapsed' }}" href="{{ route('walikelas.index') }}">
           <i class="bi bi-person-workspace"></i><span>Wali Kelas</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('kelas.*') ? '' : 'collapsed' }}" href="{{ route('kelas.index') }}">
-          <i class="bi bi-door-open"></i><span>Kelas</span>
         </a>
       </li>
       <li class="nav-item">
@@ -105,17 +115,6 @@
       </li>
 
       <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('tahun-ajaran.*', 'semester.*') ? '' : 'collapsed' }}"
-           data-bs-target="#tahun-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-calendar3"></i><span>Tahun Ajaran & Semester</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="tahun-nav" class="nav-content collapse {{ request()->routeIs('tahun-ajaran.*', 'semester.*') ? 'show' : '' }}" data-bs-parent="#sidebar-nav">
-          <li><a href="{{ route('tahun-ajaran.index') }}" class="{{ request()->routeIs('tahun-ajaran.*') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Tahun Ajaran</span></a></li>
-          <li><a href="{{ route('semester.index') }}" class="{{ request()->routeIs('semester.*') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Semester</span></a></li>
-        </ul>
-      </li>
-
-      <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('ekstrakurikuler.*') ? '' : 'collapsed' }}" href="{{ route('ekstrakurikuler.index') }}">
           <i class="bi bi-trophy"></i><span>Ekstrakurikuler</span>
         </a>
@@ -142,24 +141,44 @@
         </a>
       </li>
 
-      {{-- 4. LAPORAN & REKAPITULASI --}}
-      <li class="nav-heading">Laporan & Rekapitulasi</li>
+      {{-- 4. AKADEMIK & NILAI SISWA --}}
+      <li class="nav-heading">Akademik & Nilai</li>
 
       <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('nilai.rekap-raport') ? '' : 'collapsed' }}" href="{{ route('nilai.rekap-raport') }}">
-          <i class="bi bi-journal-check"></i><span>Rekap Nilai</span>
+        <a class="nav-link {{ request()->routeIs('nilai.*') ? '' : 'collapsed' }}"
+           data-bs-target="#nilai-admin-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-journal-check"></i><span>Nilai Siswa</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
+        <ul id="nilai-admin-nav" class="nav-content collapse {{ request()->routeIs('nilai.*') ? 'show' : '' }}" data-bs-parent="#sidebar-nav">
+          <li class="px-3 py-1 text-secondary fw-semibold fs-7" style="font-size: 0.8rem; list-style-type: none;"><i class="bi bi-star me-1 text-warning"></i> Input Nilai</li>
+          <li><a href="{{ route('nilai.harian') }}" class="{{ request()->routeIs('nilai.harian') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Input Nilai Harian</span></a></li>
+          <li><a href="{{ route('nilai.mid') }}" class="{{ request()->routeIs('nilai.mid') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Input Nilai MID</span></a></li>
+          <li><a href="{{ route('nilai.pas') }}" class="{{ request()->routeIs('nilai.pas') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Input Nilai PAS</span></a></li>
+          <li><a href="{{ route('nilai.raport-input') }}" class="{{ request()->routeIs('nilai.raport-input') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Input Nilai Raport</span></a></li>
+          
+          <li class="px-3 py-1 mt-2 text-secondary fw-semibold fs-7" style="font-size: 0.8rem; list-style-type: none;"><i class="bi bi-star me-1 text-warning"></i> Rekap Nilai</li>
+          <li><a href="{{ route('nilai.rekap-mapel') }}" class="{{ request()->routeIs('nilai.rekap-mapel') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Rekap Nilai Per Mapel</span></a></li>
+          <li><a href="{{ route('nilai.rekap-raport') }}" class="{{ request()->routeIs('nilai.rekap-raport') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Rekap Nilai Raport</span></a></li>
+        </ul>
       </li>
+
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('kehadiran.*') ? '' : 'collapsed' }}"
+           data-bs-target="#kehadiran-admin-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-calendar-check"></i><span>Kehadiran Siswa</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="kehadiran-admin-nav" class="nav-content collapse {{ request()->routeIs('kehadiran.*') ? 'show' : '' }}" data-bs-parent="#sidebar-nav">
+          <li><a href="{{ route('kehadiran.create') }}" class="{{ request()->routeIs('kehadiran.create') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Input Kehadiran</span></a></li>
+          <li><a href="{{ route('kehadiran.rekap') }}" class="{{ request()->routeIs('kehadiran.rekap') ? 'active' : '' }}"><i class="bi bi-circle"></i><span>Rekap Kehadiran</span></a></li>
+        </ul>
+      </li>
+
+      {{-- 5. LAPORAN & REKAPITULASI --}}
+      <li class="nav-heading">Laporan & Rekapitulasi</li>
 
       <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('nilai.cetak-raport') ? '' : 'collapsed' }}" href="{{ route('nilai.cetak-raport') }}">
           <i class="bi bi-printer"></i><span>Cetak Raport</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('kehadiran.rekap') ? '' : 'collapsed' }}" href="{{ route('kehadiran.rekap') }}">
-          <i class="bi bi-calendar-check"></i><span>Rekap Kehadiran</span>
         </a>
       </li>
 

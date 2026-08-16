@@ -454,22 +454,27 @@ class KehadiranController extends Controller
         $tahunAjarans = TahunAjaran::query()->get();
 
         $selectedTa = $request->get('tahun_ajaran_id');
-        $selectedSemName = $request->get('semester_name');
-
         if (!$selectedTa) {
             $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 
@@ -570,7 +575,7 @@ class KehadiranController extends Controller
         }
 
         return view('pages.kehadiran.rekap', compact(
-            'kelas', 'tahunAjarans', 'mapels',
+            'kelas', 'tahunAjarans', 'semesters', 'mapels',
             'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'selectedMapel',
             'students', 'dates', 'attendanceMatrix'
         ));
@@ -680,26 +685,34 @@ class KehadiranController extends Controller
         $tahunAjarans = TahunAjaran::query()->get();
 
         $selectedTa = $request->get('tahun_ajaran_id');
-        $selectedSemName = $request->get('semester_name');
-
         if (!$selectedTa) {
             $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 
-        $kelasId = $siswa->kelas_id;
+        $pk = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)
+            ->where('tahun_ajaran_id', $selectedTa)
+            ->first();
+        $kelasId = $pk ? $pk->kelas_id : $siswa->kelas_id;
         $classMapels = [];
         $attendanceCounts = [];
 
@@ -729,6 +742,8 @@ class KehadiranController extends Controller
             }
         }
 
-        return view('pages.kehadiran.rekap_personal', compact('siswa', 'tahunAjarans', 'selectedTa', 'selectedSemName', 'selectedSem', 'classMapels', 'attendanceCounts'));
+        $children = $this->getChildrenForParent();
+
+        return view('pages.kehadiran.rekap_personal', compact('siswa', 'children', 'tahunAjarans', 'semesters', 'selectedTa', 'selectedSemName', 'selectedSem', 'classMapels', 'attendanceCounts'));
     }
 }

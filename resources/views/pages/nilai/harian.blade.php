@@ -85,7 +85,6 @@
                 @if($selectedTa && $selectedSem && $selectedKelas && $selectedMapel)
                 <div class="card shadow-sm border-0">
                     <div class="card-body pt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
                                 <h5 class="card-title text-primary fw-bold p-0 mb-0">Form Input Nilai Harian</h5>
                                 @if($isLockedHarian)
@@ -93,25 +92,27 @@
                                 @else
                                     <span class="badge bg-success px-3 py-2" style="font-size:0.82rem;">🔓 Terbuka</span>
                                 @endif
-                            </div>
-                            @if($isAdmin && $selectedMapel)
-                                <form method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline" onsubmit="return confirm('{{ $isLockedHarian ? 'Buka kunci nilai harian ini?' : 'Kunci nilai harian ini? Guru tidak akan bisa mengubah nilai.' }}')">
-                                    @csrf
-                                    <input type="hidden" name="mata_pelajaran_id" value="{{ $selectedMapel }}">
-                                    <input type="hidden" name="jenis" value="harian">
-                                    <button type="submit" class="btn btn-sm px-3 fw-semibold {{ $isLockedHarian ? 'btn-outline-success' : 'btn-outline-danger' }}">
+                                @if($selectedMapel)
+                                    <form id="form-lock-toggle" method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline ms-1">
+                                        @csrf
+                                        <input type="hidden" name="mata_pelajaran_id" value="{{ $selectedMapel }}">
+                                        <input type="hidden" name="jenis" value="harian">
                                         @if($isLockedHarian)
-                                            <i class="bi bi-unlock-fill me-1"></i> Buka Kunci
+                                            <button type="button" class="btn btn-sm px-3 fw-semibold btn-outline-success" style="border-radius: 6px;" onclick="handleUnlockNilai('Nilai Harian')">
+                                                <i class="bi bi-unlock-fill me-1"></i> Buka Kunci
+                                            </button>
                                         @else
-                                            <i class="bi bi-lock-fill me-1"></i> Kunci Nilai
+                                            <button type="button" class="btn btn-sm px-3 fw-semibold btn-outline-danger" style="border-radius: 6px;" onclick="handleLockNilai('Nilai Harian', 'form-nilai-harian')">
+                                                <i class="bi bi-lock-fill me-1"></i> Kunci Nilai
+                                            </button>
                                         @endif
-                                    </button>
-                                </form>
-                            @endif
+                                    </form>
+                                @endif
+                            </div>
                         </div>
 
                         @if(count($students) > 0)
-                        <form action="{{ route('nilai.harian.save') }}" method="POST">
+                        <form id="form-nilai-harian" action="{{ route('nilai.harian.save') }}" method="POST">
                             @csrf
                             <input type="hidden" name="tahun_ajaran_id" value="{{ $selectedTa }}">
                             <input type="hidden" name="semester_id" value="{{ $selectedSem }}">
@@ -345,5 +346,55 @@ $(document).ready(function() {
     // Run trigger on page load to ensure everything is calculated if there are values pre-filled
     $('.tp-input').trigger('input');
 });
+
+function handleLockNilai(jenisName, formId) {
+    Swal.fire({
+        title: 'Kunci ' + jenisName + '?',
+        html: 'Nilai yang Anda masukkan akan <strong>disimpan dan langsung dikunci</strong>.<br><small class="text-muted">Setelah dikunci, nilai tidak dapat diubah kembali sampai dibuka kuncinya.</small>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-lock-fill me-1"></i> Ya, Simpan & Kunci',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formNilai = document.getElementById(formId);
+            if (formNilai) {
+                let lockInput = document.getElementById('input-auto-lock');
+                if (!lockInput) {
+                    lockInput = document.createElement('input');
+                    lockInput.type = 'hidden';
+                    lockInput.id = 'input-auto-lock';
+                    lockInput.name = 'auto_lock';
+                    formNilai.appendChild(lockInput);
+                }
+                lockInput.value = '1';
+                formNilai.submit();
+            } else {
+                document.getElementById('form-lock-toggle').submit();
+            }
+        }
+    });
+}
+
+function handleUnlockNilai(jenisName) {
+    Swal.fire({
+        title: 'Buka Kunci ' + jenisName + '?',
+        text: 'Kunci nilai akan dibuka agar Anda dapat mengedit kembali data nilai.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('form-lock-toggle').submit();
+        }
+    });
+}
 </script>
 @endpush

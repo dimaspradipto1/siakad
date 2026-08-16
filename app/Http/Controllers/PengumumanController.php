@@ -94,9 +94,10 @@ class PengumumanController extends Controller
         }
 
         $tahunAjarans = \App\Models\TahunAjaran::query()->get();
+        $semesters = \App\Models\Semester::query()->get();
         $mapels = \App\Models\MataPelajaran::query()->distinct()->orderBy('nama_mata_pelajaran', 'asc')->get(['nama_mata_pelajaran']);
         
-        return $dataTable->render('pages.pengumuman.index', compact('kelas', 'tahunAjarans', 'mapels'));
+        return $dataTable->render('pages.pengumuman.index', compact('kelas', 'tahunAjarans', 'semesters', 'mapels'));
     }
 
     public function create()

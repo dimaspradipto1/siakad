@@ -34,8 +34,11 @@
                                 <label for="filter_semester_name" class="form-label fw-semibold text-secondary small">Semester</label>
                                 <select id="filter_semester_name" class="form-select form-select-sm rounded-3">
                                     <option value="">Semua Semester</option>
-                                    <option value="Semester 1 (Ganjil)">Semester 1 (Ganjil)</option>
-                                    <option value="Semester 2 (Genap)">Semester 2 (Genap)</option>
+                                    @if(isset($semesters))
+                                        @foreach($semesters as $sem)
+                                            <option value="{{ $sem->nama_semester }}">{{ $sem->nama_semester }}</option>
+                                        @endforeach
+                                    @endif
                                 </select>
                             </div>
                             <div class="col-md-3">

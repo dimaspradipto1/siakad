@@ -85,6 +85,71 @@
                     </div>
                 </div>
             </div>
+        @elseif ($activeRole === 'orang tua')
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="card border-0 bg-light shadow-sm" style="border-radius: 12px;">
+                        <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                            <div>
+                                <h4 class="text-dark fw-bold mb-1">Selamat Datang, {{ $user->name }}</h4>
+                                <p class="text-secondary mb-0" style="font-size: 0.95rem;">
+                                    @if(isset($selectedChild) && $selectedChild)
+                                        Sedang aktif melihat data anak: <strong class="text-primary">{{ $selectedChild->nama_siswa }}</strong>
+                                        @php
+                                            $activeTa = \App\Models\TahunAjaran::where('status', 'Aktif')->first();
+                                            $pk = \App\Models\PembagianKelas::where('siswa_id', $selectedChild->id)->where('tahun_ajaran_id', $activeTa?->id)->first();
+                                            $kNama = $pk?->kelas?->nama_kelas ?? ($selectedChild->kelas?->nama_kelas ?? '-');
+                                        @endphp
+                                        (Kelas {{ $kNama }})
+                                    @else
+                                        Pilih data anak di bawah ini untuk melihat informasi akademik:
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if(isset($children) && $children->count() > 0)
+                    <div class="col-12 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Data Anak Anda</h5>
+                            <span class="badge bg-primary rounded-pill px-3 py-2">{{ $children->count() }} Anak Terdaftar</span>
+                        </div>
+                        <div class="row g-3">
+                            @foreach($children as $child)
+                                @php
+                                    $activeTa = \App\Models\TahunAjaran::where('status', 'Aktif')->first();
+                                    $pk = \App\Models\PembagianKelas::where('siswa_id', $child->id)->where('tahun_ajaran_id', $activeTa?->id)->first();
+                                    $kNama = $pk?->kelas?->nama_kelas ?? ($child->kelas?->nama_kelas ?? '-');
+                                    $isActiveChild = isset($selectedChild) && $selectedChild && $selectedChild->id === $child->id;
+                                @endphp
+                                <div class="col-md-{{ $children->count() === 1 ? '12' : ($children->count() === 2 ? '6' : '4') }}">
+                                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px; {{ $isActiveChild ? 'border: 2px solid #0d6efd !important;' : '' }}">
+                                        <div class="card-body p-4 text-center">
+                                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle {{ $isActiveChild ? 'bg-primary text-white' : 'bg-light text-primary' }} mb-3 shadow-sm" style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: bold;">
+                                                {{ strtoupper(substr($child->nama_siswa, 0, 1)) }}
+                                            </div>
+                                            <h5 class="fw-bold text-dark mb-1">{{ $child->nama_siswa }}</h5>
+                                            <p class="text-muted small mb-3">NISN: {{ $child->nisn }} &bull; <span class="badge bg-light text-dark border">Kelas {{ $kNama }}</span></p>
+
+                                            <div class="d-grid gap-2">
+                                                <a href="{{ route('orangtua.select-child', ['id' => $child->id, 'redirect' => route('siswa.profile')]) }}" class="btn {{ $isActiveChild ? 'btn-primary' : 'btn-outline-primary' }} btn-sm py-2 fw-bold" style="border-radius: 8px;">
+                                                    @if($isActiveChild)
+                                                        <i class="bi bi-check-circle me-1"></i> Sedang Dipilih &bull; Lihat Profile
+                                                    @else
+                                                        Pilih & Lihat Data Anak
+                                                    @endif
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </div>
         @elseif ($activeRole === 'kepala sekolah')
             <div class="row">
                 <!-- Selamat Datang -->
@@ -106,12 +171,17 @@
                                 <h5 class="text-secondary fw-semibold mb-2" style="font-size: 1.15rem;">Jumlah Pegawai</h5>
                                 <h2 class="text-dark fw-bold display-5 mb-3">{{ $totalPegawai ?? 0 }}</h2>
                             </div>
-                            <div class="d-flex justify-content-center gap-3 text-secondary" style="font-size: 0.85rem;">
-                                <div><strong class="text-dark d-block mb-1" style="font-size: 1.25rem;">{{ $guruCount }}</strong> Guru</div>
-                                <div style="border-left: 1px solid #dee2e6;"></div>
-                                <div><strong class="text-dark d-block mb-1" style="font-size: 1.25rem;">{{ $adminCount }}</strong> Admin</div>
-                                <div style="border-left: 1px solid #dee2e6;"></div>
-                                <div><strong class="text-dark d-block mb-1" style="font-size: 1.25rem;">{{ $kebersihanCount }}</strong> Tenaga Kebersihan</div>
+                            <div class="d-flex justify-content-center gap-3 text-secondary flex-wrap" style="font-size: 0.85rem;">
+                                @if(isset($pegawaiRoleCounts) && $pegawaiRoleCounts->isNotEmpty())
+                                    @foreach($pegawaiRoleCounts as $rName => $rCount)
+                                        @if(!$loop->first)
+                                            <div style="border-left: 1px solid #dee2e6;"></div>
+                                        @endif
+                                        <div><strong class="text-dark d-block mb-1" style="font-size: 1.25rem;">{{ $rCount }}</strong> {{ $rName }}</div>
+                                    @endforeach
+                                @else
+                                    <div><strong class="text-dark d-block mb-1" style="font-size: 1.25rem;">0</strong> Pegawai</div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -148,7 +218,13 @@
                                 <h5 class="text-secondary fw-semibold mb-2" style="font-size: 1.15rem;">Kehadiran Siswa</h5>
                                 <h2 class="text-dark fw-bold display-5 mb-3">{{ $hadirCount ?? 0 }}</h2>
                             </div>
-                            <p class="text-secondary mb-0 fw-semibold" style="font-size: 0.95rem;">Naik 1.2% dibanding Kemarin</p>
+                            <p class="text-secondary mb-0 fw-semibold" style="font-size: 0.95rem;">
+                                @if(($kehadiranTotal ?? 0) > 0)
+                                    {{ $kehadiranPercentage }}% Total Kehadiran
+                                @else
+                                    0% (Belum ada data kehadiran)
+                                @endif
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -161,8 +237,20 @@
                             <h5 class="text-secondary fw-semibold mb-2" style="font-size: 1.15rem;">Akademik</h5>
                             <h2 class="text-dark fw-bold display-5 mb-2">{{ $akademikPercentage }}%</h2>
                             <div class="d-flex flex-column align-items-center">
-                                <p class="text-secondary mb-1 fw-bold" style="font-size: 0.95rem;">Baik</p>
-                                <p class="text-secondary mb-0" style="font-size: 0.85rem;">Naik 0.8% dari Semester Lalu</p>
+                                <p class="text-secondary mb-1 fw-bold" style="font-size: 0.95rem;">
+                                    @if($akademikAvg !== null && $akademikAvg > 0)
+                                        {{ $akademikAvg >= 85 ? 'Sangat Baik' : ($akademikAvg >= 75 ? 'Baik' : 'Cukup') }}
+                                    @else
+                                        Belum Ada Data Nilai
+                                    @endif
+                                </p>
+                                <p class="text-secondary mb-0" style="font-size: 0.85rem;">
+                                    @if($akademikAvg !== null && $akademikAvg > 0)
+                                        Rata-rata Nilai Siswa
+                                    @else
+                                        0% (Data nilai belum terisi)
+                                    @endif
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -384,8 +472,14 @@
                                                 <i class="bi bi-building" style="color:#4154f1;"></i>
                                             </div>
                                             <div class="ps-3">
-                                                <h6>—</h6>
-                                                <span class="text-muted small">Kelas yang diampu</span>
+                                                <h6 style="font-size: 1.1rem;">{{ $guruKelasDisplay ?? '—' }}</h6>
+                                                <span class="text-muted small">
+                                                    @if(!empty($kelasWaliNama))
+                                                        Wali Kelas {{ $kelasWaliNama }} ({{ $guruKelasCount ?? 1 }} Kelas)
+                                                    @else
+                                                        {{ ($guruKelasCount ?? 0) > 0 ? ($guruKelasCount . ' Kelas Diampu') : 'Kelas yang diampu' }}
+                                                    @endif
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -402,8 +496,8 @@
                                                 <i class="bi bi-book" style="color:#2eca6a;"></i>
                                             </div>
                                             <div class="ps-3">
-                                                <h6>—</h6>
-                                                <span class="text-muted small">Mapel yang diajarkan</span>
+                                                <h6 style="font-size: 1.1rem;">{{ $guruMapelDisplay ?? '—' }}</h6>
+                                                <span class="text-muted small">{{ ($guruMapelCount ?? 0) > 0 ? ($guruMapelCount . ' Mapel Aktif') : 'Mapel yang diajarkan' }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -562,11 +656,8 @@
         document.addEventListener("DOMContentLoaded", () => {
             const ctx = document.getElementById('akademikChart').getContext('2d');
             
-            const labels = {!! json_encode($chartData->pluck('nama_kelas')) !!};
-            const data = {!! json_encode($chartData->pluck('avg_nilai')) !!};
-
-            const chartLabels = labels.length > 0 ? labels : ['Kelas 1A', 'Kelas 1B', 'Kelas 2A', 'Kelas 2B', 'Kelas 3A', 'Kelas 3B'];
-            const chartDataValues = data.length > 0 ? data : [82, 85, 80, 84, 88, 83];
+            const chartLabels = {!! json_encode($chartLabels ?? []) !!};
+            const chartDataValues = {!! json_encode($chartValues ?? []) !!};
 
             new Chart(ctx, {
                 type: 'bar',

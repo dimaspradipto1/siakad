@@ -24,7 +24,7 @@ class MateriPembelajaranRequest extends FormRequest
             'judul_materi'      => ['required', 'string', 'max:255'],
             'deskripsi_materi'  => ['nullable', 'string'],
             'tahun_ajaran_id'   => ['required', 'exists:tahun_ajarans,id'],
-            'semester_name'     => ['required', 'string', 'in:Semester 1 (Ganjil),Semester 2 (Genap)'],
+            'semester_name'     => ['required', 'string', 'max:50'],
             'kelas_id'          => ['required', 'exists:kelas,id'],
             'nama_mata_pelajaran' => ['required', 'string'],
             'file_materi'       => $this->isMethod('POST') 

@@ -61,18 +61,23 @@
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
-                                    <select id="nama_semester" name="nama_semester"
-                                        class="form-select @error('nama_semester') is-invalid @enderror">
-                                        <option value="" disabled selected>-- Pilih Semester --</option>
-                                        <option value="Semester 1 (Ganjil)" {{ old('nama_semester') === 'Semester 1 (Ganjil)' ? 'selected' : '' }}>Semester 1 (Ganjil)</option>
-                                        <option value="Semester 2 (Genap)" {{ old('nama_semester') === 'Semester 2 (Genap)' ? 'selected' : '' }}>Semester 2 (Genap)</option>
-                                    </select>
-                                    @error('nama_semester')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <input type="text" id="nama_semester" name="nama_semester" list="semester_list"
+                                        class="form-select @error('nama_semester') is-invalid @enderror"
+                                        value="{{ old('nama_semester') }}"
+                                        placeholder="Ketik atau pilih semester (contoh: Semester 1 (Ganjil), Semester 2 (Genap), dsb)" required>
+                                    <datalist id="semester_list">
+                                        <option value="Semester 1 (Ganjil)">
+                                        <option value="Semester 2 (Genap)">
+                                        <option value="Semester Antara">
+                                        <option value="Semester Pendek">
+                                        <option value="Semester 3">
+                                    </datalist>
                                 </div>
+                                @error('nama_semester')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                                 <div class="form-text text-muted">
-                                    <i class="bi bi-info-circle me-1"></i>Semester 1 (Ganjil): Juli–Desember, Semester 2 (Genap): Januari–Juni.
+                                    <i class="bi bi-info-circle me-1"></i>Pilih dari daftar saran atau ketik nama semester yang disesuaikan.
                                 </div>
                             </div>
 

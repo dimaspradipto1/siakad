@@ -45,7 +45,9 @@ class GuruDataTable extends DataTable
                 'pegawais.jenis_kelamin as jenis_kelamin',
                 'pegawais.status as status'
             ])
-            ->leftJoin('pegawais', 'gurus.pegawai_id', '=', 'pegawais.id');
+            ->join('pegawais', 'gurus.pegawai_id', '=', 'pegawais.id')
+            ->join('users', 'pegawais.user_id', '=', 'users.id')
+            ->whereRaw('LOWER(users.roles) = ?', ['guru']);
     }
 
     /**

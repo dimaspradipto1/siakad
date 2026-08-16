@@ -49,26 +49,34 @@ class NilaiController extends Controller
             $tahunAjarans = TahunAjaran::query()->get();
 
             $selectedTa = $request->get('tahun_ajaran_id');
-            $selectedSemName = $request->get('semester_name');
-
             if (!$selectedTa) {
                 $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
                 $selectedTa = $activeTa ? $activeTa->id : null;
             }
-            if (!$selectedSemName) {
-                $selectedSemName = 'Semester 1 (Ganjil)';
+
+            $semesters = $selectedTa
+                ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+                : Semester::query()->get();
+
+            $selectedSemName = $request->get('semester_name');
+            if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+                $selectedSemName = $semesters->first()?->nama_semester ?? '';
             }
 
             $semester = null;
             if ($selectedTa && $selectedSemName) {
-                $semester = Semester::query()
-                    ->where('tahun_ajaran_id', $selectedTa)
-                    ->where('nama_semester', $selectedSemName)
-                    ->first();
+                $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                    ?? Semester::query()
+                        ->where('tahun_ajaran_id', $selectedTa)
+                        ->where('nama_semester', $selectedSemName)
+                        ->first();
             }
             $selectedSem = $semester ? $semester->id : null;
 
-            $selectedKelas = $siswa->kelas_id;
+            $pk = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)
+                ->where('tahun_ajaran_id', $selectedTa)
+                ->first();
+            $selectedKelas = $pk ? $pk->kelas_id : $siswa->kelas_id;
             $kelas = Kelas::query()->where('id', $selectedKelas)->get();
 
             $mapels = collect();
@@ -108,7 +116,9 @@ class NilaiController extends Controller
                 }
             }
 
-            return view('pages.nilai.rekap_personal', compact('siswa', 'tahunAjarans', 'kelas', 'mapels', 'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'selectedMapel', 'gradeRecord'));
+            $children = $this->getChildrenForParent();
+
+            return view('pages.nilai.rekap_personal', compact('siswa', 'children', 'tahunAjarans', 'semesters', 'kelas', 'mapels', 'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'selectedMapel', 'gradeRecord'));
         }
 
         return $dataTable->render('pages.nilai.index');
@@ -406,7 +416,9 @@ class NilaiController extends Controller
         $mapelId = $request->mata_pelajaran_id;
 
         $mapel = MataPelajaran::findOrFail($mapelId);
-        if ($mapel->is_locked_harian) {
+        $isAutoLock = $request->input('auto_lock') == 1;
+
+        if ($mapel->is_locked_harian && !$isAutoLock) {
             alert()->error('Gagal!', 'Nilai Harian telah dikunci.');
             return back();
         }
@@ -478,7 +490,12 @@ class NilaiController extends Controller
             );
         }
 
-        alert()->html('Berhasil!', 'Data Nilai Harian berhasil disimpan.', 'success');
+        if ($isAutoLock) {
+            $mapel->update(['is_locked_harian' => true]);
+            alert()->html('Berhasil!', 'Data Nilai Harian berhasil disimpan dan dikunci 🔒.', 'success');
+        } else {
+            alert()->html('Berhasil!', 'Data Nilai Harian berhasil disimpan.', 'success');
+        }
         return back();
     }
 
@@ -563,7 +580,9 @@ class NilaiController extends Controller
         $mapelId = $request->mata_pelajaran_id;
 
         $mapel = MataPelajaran::findOrFail($mapelId);
-        if ($mapel->is_locked_mid) {
+        $isAutoLock = $request->input('auto_lock') == 1;
+
+        if ($mapel->is_locked_mid && !$isAutoLock) {
             alert()->error('Gagal!', 'Nilai MID telah dikunci.');
             return back();
         }
@@ -588,7 +607,12 @@ class NilaiController extends Controller
             );
         }
 
-        alert()->html('Berhasil!', 'Data Nilai MID berhasil disimpan.', 'success');
+        if ($isAutoLock) {
+            $mapel->update(['is_locked_mid' => true]);
+            alert()->html('Berhasil!', 'Data Nilai MID berhasil disimpan dan dikunci 🔒.', 'success');
+        } else {
+            alert()->html('Berhasil!', 'Data Nilai MID berhasil disimpan.', 'success');
+        }
         return back();
     }
 
@@ -673,7 +697,9 @@ class NilaiController extends Controller
         $mapelId = $request->mata_pelajaran_id;
 
         $mapel = MataPelajaran::findOrFail($mapelId);
-        if ($mapel->is_locked_pas) {
+        $isAutoLock = $request->input('auto_lock') == 1;
+
+        if ($mapel->is_locked_pas && !$isAutoLock) {
             alert()->error('Gagal!', 'Nilai PAS telah dikunci.');
             return back();
         }
@@ -698,7 +724,12 @@ class NilaiController extends Controller
             );
         }
 
-        alert()->html('Berhasil!', 'Data Nilai PAS berhasil disimpan.', 'success');
+        if ($isAutoLock) {
+            $mapel->update(['is_locked_pas' => true]);
+            alert()->html('Berhasil!', 'Data Nilai PAS berhasil disimpan dan dikunci 🔒.', 'success');
+        } else {
+            alert()->html('Berhasil!', 'Data Nilai PAS berhasil disimpan.', 'success');
+        }
         return back();
     }
 
@@ -834,7 +865,9 @@ class NilaiController extends Controller
         $mapelId = $request->mata_pelajaran_id;
 
         $mapel = MataPelajaran::findOrFail($mapelId);
-        if ($mapel->is_locked_raport) {
+        $isAutoLock = $request->input('auto_lock') == 1;
+
+        if ($mapel->is_locked_raport && !$isAutoLock) {
             alert()->error('Gagal!', 'Nilai Raport telah dikunci.');
             return back();
         }
@@ -884,7 +917,12 @@ class NilaiController extends Controller
             );
         }
 
-        alert()->html('Berhasil!', 'Data Nilai Raport berhasil disimpan.', 'success');
+        if ($isAutoLock) {
+            $mapel->update(['is_locked_raport' => true]);
+            alert()->html('Berhasil!', 'Data Nilai Raport berhasil disimpan dan dikunci 🔒.', 'success');
+        } else {
+            alert()->html('Berhasil!', 'Data Nilai Raport berhasil disimpan.', 'success');
+        }
         return back();
     }
 
@@ -895,9 +933,9 @@ class NilaiController extends Controller
     {
         $user = auth()->user();
 
-        // Hanya admin yang bisa mengunci/membuka nilai
-        if (!$user || $user->roles !== 'admin') {
-            alert()->error('Akses Ditolak', 'Hanya admin yang dapat mengunci atau membuka nilai.');
+        // Admin, Kepala Sekolah, Wali Kelas, dan Guru dapat mengunci/membuka nilai
+        if (!$user || !in_array($user->roles, ['admin', 'kepala sekolah', 'wali kelas', 'guru'])) {
+            alert()->error('Akses Ditolak', 'Anda tidak memiliki hak untuk mengunci atau membuka nilai.');
             return back();
         }
 
@@ -936,15 +974,22 @@ class NilaiController extends Controller
         list($selectedTa, $selectedSem, $selectedKelas, $selectedMapel) = $this->resolveFilters($request);
 
         $selectedSemName = $request->get('semester_name');
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $tahunAjarans = TahunAjaran::query()->get();
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         if ($selectedTa && $selectedSemName) {
-            $semModel = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semModel = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
             if ($semModel) {
                 $selectedSem = $semModel->id;
             }
@@ -1025,14 +1070,18 @@ class NilaiController extends Controller
         $tahunAjarans = TahunAjaran::query()->get();
 
         $selectedTa = $request->get('tahun_ajaran_id');
-        $selectedSemName = $request->get('semester_name');
-
         if (!$selectedTa) {
             $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         if ($isWali) {
@@ -1061,10 +1110,11 @@ class NilaiController extends Controller
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 
@@ -1136,7 +1186,7 @@ class NilaiController extends Controller
             }
         }
 
-        return view('pages.nilai.rekap_raport', compact('kelas', 'tahunAjarans', 'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'selectedSiswa', 'siswaOptions', 'students', 'classMapels'));
+        return view('pages.nilai.rekap_raport', compact('kelas', 'tahunAjarans', 'semesters', 'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'selectedSiswa', 'siswaOptions', 'students', 'classMapels'));
     }
 
     public function cetakRaportList(Request $request)
@@ -1149,14 +1199,18 @@ class NilaiController extends Controller
         $tahunAjarans = TahunAjaran::query()->get();
 
         $selectedTa = $request->get('tahun_ajaran_id');
-        $selectedSemName = $request->get('semester_name');
-
         if (!$selectedTa) {
             $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         if ($isWali) {
@@ -1174,10 +1228,11 @@ class NilaiController extends Controller
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 
@@ -1190,7 +1245,7 @@ class NilaiController extends Controller
             $students = Siswa::query()->whereIn('id', $siswaIds)->orderBy('nama_siswa', 'asc')->get();
         }
 
-        return view('pages.nilai.cetak_raport_list', compact('kelas', 'tahunAjarans', 'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'students'));
+        return view('pages.nilai.cetak_raport_list', compact('kelas', 'tahunAjarans', 'semesters', 'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'students'));
     }
 
     public function cetakRaportPrint($siswa_id, $tahun_ajaran_id, $semester_id)
@@ -1342,16 +1397,7 @@ class NilaiController extends Controller
 
     public function cetakRaportPersonal(\Illuminate\Http\Request $request)
     {
-        $user = auth()->user();
-        $siswa = null;
-        if ($user->roles === 'siswa') {
-            $siswa = Siswa::where('user_id', $user->id)->first();
-        } elseif ($user->roles === 'orang tua') {
-            $orangTua = \App\Models\OrangTua::where('user_id', $user->id)->first();
-            if ($orangTua) {
-                $siswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
-            }
-        }
+        $siswa = $this->resolveStudentForCurrentUser();
 
         if (!$siswa) {
             alert()->error('Error', 'Data siswa tidak ditemukan.');
@@ -1361,26 +1407,34 @@ class NilaiController extends Controller
         $tahunAjarans = TahunAjaran::query()->get();
 
         $selectedTa = $request->get('tahun_ajaran_id');
-        $selectedSemName = $request->get('semester_name');
-
         if (!$selectedTa) {
             $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 
-        $kelasId = $siswa->kelas_id;
+        $pk = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)
+            ->where('tahun_ajaran_id', $selectedTa)
+            ->first();
+        $kelasId = $pk ? $pk->kelas_id : $siswa->kelas_id;
         $kelasModel = Kelas::query()->find($kelasId);
         $school = \App\Models\ProfilSekolah::query()->first();
 
@@ -1512,8 +1566,10 @@ class NilaiController extends Controller
             }
         }
 
+        $children = $this->getChildrenForParent();
+
         return view('pages.nilai.cetak_raport_personal', compact(
-            'siswa', 'tahunAjarans', 'selectedTa', 'selectedSemName', 'selectedSem', 'kelasModel', 'school',
+            'siswa', 'children', 'tahunAjarans', 'semesters', 'selectedTa', 'selectedSemName', 'selectedSem', 'kelasModel', 'school',
             'classMapels', 'grades', 'attendance', 'catatan', 'waliKelas', 'ekskuls', 'ortuNama', 'kepsekNama', 'kepsekNip', 'ranking', 'totalStudents', 'ekskulText'
         ));
     }

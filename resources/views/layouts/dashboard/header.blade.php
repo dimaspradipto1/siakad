@@ -42,6 +42,51 @@
           </ul>
         </li><!-- End Notification Nav -->
 
+        @php
+            $authUser = Auth::user();
+            $canSwitchRole = $authUser && $authUser->roles === 'guru' && $authUser->isWaliKelasAktif();
+            $currentActiveRole = $authUser?->activeRole();
+            $isOrangTuaUser = $authUser && $authUser->roles === 'orang tua';
+            $parentChildren = collect();
+            $currentChild = null;
+            if ($isOrangTuaUser) {
+                $parentChildren = (new class { use \App\Traits\ResolvesStudentFromUser; public function list($u) { return $this->getChildrenForParent($u); } })->list($authUser);
+                $activeChildId = session('selected_child_id');
+                $currentChild = $parentChildren->firstWhere('id', (int)$activeChildId) ?? $parentChildren->first();
+            }
+        @endphp
+
+        @if($isOrangTuaUser && $parentChildren->count() > 1)
+        <li class="nav-item dropdown me-3">
+          <a class="nav-link dropdown-toggle btn btn-light btn-sm px-3 py-1 d-flex align-items-center gap-2 border shadow-sm rounded-pill fw-semibold text-dark" href="#" data-bs-toggle="dropdown" style="font-size: 0.85rem; background: #f8f9fa;">
+            <i class="bi bi-people-fill text-primary"></i>
+            <span>{{ $currentChild?->nama_siswa ?? 'Pilih Anak' }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" style="border-radius: 12px; min-width: 240px;">
+            <li class="dropdown-header text-start py-1 px-3">
+              <span class="small fw-bold text-muted text-uppercase" style="font-size: 0.75rem;">Pilih Data Anak :</span>
+            </li>
+            @foreach($parentChildren as $c)
+              @php
+                $cKelas = $c->pembagianKelas->first()?->kelas?->nama_kelas ?? ($c->kelas?->nama_kelas ?? '-');
+                $isSelected = $currentChild && $currentChild->id === $c->id;
+              @endphp
+              <li>
+                <a class="dropdown-item d-flex justify-content-between align-items-center py-2 px-3 {{ $isSelected ? 'active bg-primary text-white' : '' }}" href="{{ route('orangtua.select-child', ['id' => $c->id, 'redirect' => url()->current()]) }}">
+                  <div>
+                    <div class="fw-bold" style="font-size: 0.9rem;">{{ $c->nama_siswa }}</div>
+                    <small class="{{ $isSelected ? 'text-white-50' : 'text-muted' }}" style="font-size: 0.78rem;">Kelas {{ $cKelas }} (NISN: {{ $c->nisn }})</small>
+                  </div>
+                  @if($isSelected)
+                    <i class="bi bi-check-circle-fill ms-2"></i>
+                  @endif
+                </a>
+              </li>
+            @endforeach
+          </ul>
+        </li>
+        @endif
+
         <li class="nav-item dropdown pe-3">
           <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
             <span class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white"
@@ -52,12 +97,6 @@
               {{ Auth::user()->name ?? 'Pengguna' }}
             </span>
           </a>
-
-          @php
-              $authUser = Auth::user();
-              $canSwitchRole = $authUser && $authUser->roles === 'guru' && $authUser->isWaliKelasAktif();
-              $currentActiveRole = $authUser?->activeRole();
-          @endphp
 
           <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
             <li class="dropdown-header">

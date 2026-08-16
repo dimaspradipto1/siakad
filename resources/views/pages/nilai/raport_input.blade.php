@@ -93,30 +93,32 @@
                                 @else
                                     <span class="badge bg-success px-3 py-2" style="font-size:0.82rem;">🔓 Terbuka</span>
                                 @endif
+                                @if($selectedMapel)
+                                    <form id="form-lock-toggle" method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline ms-1">
+                                        @csrf
+                                        <input type="hidden" name="mata_pelajaran_id" value="{{ $selectedMapel }}">
+                                        <input type="hidden" name="jenis" value="raport">
+                                        @if($isLockedRaport)
+                                            <button type="button" class="btn btn-sm px-3 fw-semibold btn-outline-success" style="border-radius: 6px;" onclick="handleUnlockNilai('Nilai Raport')">
+                                                <i class="bi bi-unlock-fill me-1"></i> Buka Kunci
+                                            </button>
+                                        @else
+                                            <button type="button" class="btn btn-sm px-3 fw-semibold btn-outline-danger" style="border-radius: 6px;" onclick="handleLockNilai('Nilai Raport', 'form-nilai-raport')">
+                                                <i class="bi bi-lock-fill me-1"></i> Kunci Nilai
+                                            </button>
+                                        @endif
+                                    </form>
+                                @endif
                             </div>
                             <div class="d-flex gap-2">
                                 @if(!$isLockedRaport)
                                     <button type="button" class="btn btn-info btn-sm text-white px-3" id="btn-auto-calc"><i class="bi bi-cpu"></i> Isi Nilai Rapot dari Rata-rata</button>
                                 @endif
-                                @if($isAdmin && $selectedMapel)
-                                    <form method="POST" action="{{ route('nilai.lock.toggle') }}" class="d-inline" onsubmit="return confirm('{{ $isLockedRaport ? 'Buka kunci nilai Raport ini?' : 'Kunci nilai Raport ini? Guru tidak akan bisa mengubah nilai.' }}')">
-                                        @csrf
-                                        <input type="hidden" name="mata_pelajaran_id" value="{{ $selectedMapel }}">
-                                        <input type="hidden" name="jenis" value="raport">
-                                        <button type="submit" class="btn btn-sm px-3 fw-semibold {{ $isLockedRaport ? 'btn-outline-success' : 'btn-outline-danger' }}">
-                                            @if($isLockedRaport)
-                                                <i class="bi bi-unlock-fill me-1"></i> Buka Kunci
-                                            @else
-                                                <i class="bi bi-lock-fill me-1"></i> Kunci Nilai
-                                            @endif
-                                        </button>
-                                    </form>
-                                @endif
                             </div>
                         </div>
 
                         @if(count($students) > 0)
-                        <form action="{{ route('nilai.raport-input.save') }}" method="POST">
+                        <form id="form-nilai-raport" action="{{ route('nilai.raport-input.save') }}" method="POST">
                             @csrf
                             <input type="hidden" name="tahun_ajaran_id" value="{{ $selectedTa }}">
                             <input type="hidden" name="semester_id" value="{{ $selectedSem }}">
@@ -128,11 +130,11 @@
                                     <thead style="background-color:#1976d2; color:#fff;" class="fw-bold">
                                         <tr>
                                             <th style="width:45px;">No</th>
-                                            <th class="text-start" style="min-width:140px;">Nama Siswa</th>
-                                            <th style="width:110px;">NISN / NIS</th>
+                                            <th class="text-start px-3" style="min-width:160px;">Nama Siswa</th>
+                                            <th style="width:120px;">NISN / NIS</th>
                                             <th style="width:100px;">Nilai</th>
-                                            <th class="text-start" style="min-width:240px;">TP Yang diukur dan Tercapai dengan Optimal</th>
-                                            <th class="text-start" style="min-width:240px;">TP yang diukur dan Perlu Peningkatan</th>
+                                            <th class="text-start px-3" style="min-width:240px;">TP Yang diukur dan Tercapai dengan Optimal</th>
+                                            <th class="text-start px-3" style="min-width:240px;">TP yang diukur dan Perlu Peningkatan</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -141,7 +143,6 @@
                                                 $rec    = $siswa->nilai_record;
                                                 $rata2  = $siswa->nilai_rata2_calc;
 
-                                                // Ambil TP yang sudah tersimpan (bisa JSON array atau null)
                                                 $savedOptimal = [];
                                                 $savedPeningkatan = [];
                                                 if ($rec) {
@@ -161,22 +162,25 @@
                                                 }
                                             @endphp
                                             <tr data-siswa-id="{{ $siswa->id }}" data-rata2="{{ $rata2 ?? '' }}">
-                                                <td>{{ $index + 1 }}</td>
-                                                <td class="text-start fw-semibold">{{ $siswa->nama_siswa }}</td>
-                                                <td class="small">
-                                                    {{ $siswa->nisn }}<br>
+                                                <td class="align-middle fw-semibold">{{ $index + 1 }}</td>
+                                                <td class="text-start fw-bold align-middle px-3 text-dark" style="font-size: 0.95rem;">
+                                                    {{ $siswa->nama_siswa }}
+                                                </td>
+                                                <td class="small align-middle">
+                                                    <span class="fw-semibold">{{ $siswa->nisn }}</span><br>
                                                     <span class="text-muted">{{ $siswa->nis }}</span>
                                                 </td>
-                                                <td>
+                                                <td class="align-middle">
                                                     <input type="number" step="1" min="0" max="100"
                                                         name="nilai[{{ $siswa->id }}][nilai_raport]"
-                                                        class="form-control text-center score-input raport-input"
+                                                        class="form-control text-center score-input raport-input mx-auto fw-bold"
+                                                        style="max-width: 90px; border-radius: 6px;"
                                                         value="{{ $rec && $rec->nilai_raport !== null ? intval($rec->nilai_raport) : '' }}"
                                                         {{ $isLockedRaport ? 'disabled' : '' }}>
                                                 </td>
 
                                                 {{-- TP Optimal: checkboxes --}}
-                                                <td class="text-start px-2 py-2">
+                                                <td class="text-start align-middle px-3 py-2">
                                                     @if(count($tpOptimalOptions) > 0)
                                                         @foreach($tpOptimalOptions as $opt)
                                                             <div class="form-check mb-1">
@@ -192,28 +196,28 @@
                                                             </div>
                                                         @endforeach
                                                     @else
-                                                        <span class="text-muted small fst-italic">Belum ada TP</span>
+                                                        <span class="text-muted fst-italic small">Belum ada TP optimal yang diatur di mata pelajaran ini.</span>
                                                     @endif
                                                 </td>
 
                                                 {{-- TP Peningkatan: checkboxes --}}
-                                                <td class="text-start px-2 py-2">
+                                                <td class="text-start align-middle px-3 py-2">
                                                     @if(count($tpPeningkatanOptions) > 0)
                                                         @foreach($tpPeningkatanOptions as $opt)
                                                             <div class="form-check mb-1">
                                                                 <input class="form-check-input" type="checkbox"
                                                                     name="nilai[{{ $siswa->id }}][tp_perlu_peningkatan][]"
                                                                     value="{{ $opt }}"
-                                                                    id="pkt_{{ $siswa->id }}_{{ $loop->index }}"
+                                                                    id="peningkatan_{{ $siswa->id }}_{{ $loop->index }}"
                                                                     {{ in_array($opt, $savedPeningkatan) ? 'checked' : '' }}
                                                                     {{ $isLockedRaport ? 'disabled' : '' }}>
-                                                                <label class="form-check-label small" for="pkt_{{ $siswa->id }}_{{ $loop->index }}">
+                                                                <label class="form-check-label small" for="peningkatan_{{ $siswa->id }}_{{ $loop->index }}">
                                                                     {{ $opt }}
                                                                 </label>
                                                             </div>
                                                         @endforeach
                                                     @else
-                                                        <span class="text-muted small fst-italic">Belum ada TP</span>
+                                                        <span class="text-muted fst-italic small">Belum ada TP perlu peningkatan yang diatur di mata pelajaran ini.</span>
                                                     @endif
                                                 </td>
                                             </tr>
@@ -286,5 +290,55 @@ $(document).ready(function() {
         });
     });
 });
+
+function handleLockNilai(jenisName, formId) {
+    Swal.fire({
+        title: 'Kunci ' + jenisName + '?',
+        html: 'Nilai yang Anda masukkan akan <strong>disimpan dan langsung dikunci</strong>.<br><small class="text-muted">Setelah dikunci, nilai tidak dapat diubah kembali sampai dibuka kuncinya.</small>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-lock-fill me-1"></i> Ya, Simpan & Kunci',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formNilai = document.getElementById(formId);
+            if (formNilai) {
+                let lockInput = document.getElementById('input-auto-lock');
+                if (!lockInput) {
+                    lockInput = document.createElement('input');
+                    lockInput.type = 'hidden';
+                    lockInput.id = 'input-auto-lock';
+                    lockInput.name = 'auto_lock';
+                    formNilai.appendChild(lockInput);
+                }
+                lockInput.value = '1';
+                formNilai.submit();
+            } else {
+                document.getElementById('form-lock-toggle').submit();
+            }
+        }
+    });
+}
+
+function handleUnlockNilai(jenisName) {
+    Swal.fire({
+        title: 'Buka Kunci ' + jenisName + '?',
+        text: 'Kunci nilai akan dibuka agar Anda dapat mengedit kembali data nilai.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('form-lock-toggle').submit();
+        }
+    });
+}
 </script>
 @endpush

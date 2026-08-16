@@ -58,6 +58,9 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::get('matapelajaranaktif/template', [MataPelajaranAktifController::class, 'template'])->name('matapelajaranaktif.template');
     Route::resource('matapelajaranaktif', MataPelajaranAktifController::class);
     Route::resource('tahun-ajaran', TahunAjaranController::class);
+    Route::get('api/semesters-by-ta/{tahun_ajaran_id}', function ($tahun_ajaran_id) {
+        return response()->json(\App\Models\Semester::query()->where('tahun_ajaran_id', $tahun_ajaran_id)->orderBy('id')->get());
+    })->name('api.semesters-by-ta');
     Route::resource('semester', SemesterController::class);
     Route::resource('kelas', KelasController::class);
     Route::resource('walikelas', WaliKelasController::class);

@@ -20,6 +20,7 @@ use App\Exports\SiswaTemplateExport;
 class SiswaController extends Controller
 {
     use \App\Traits\AuthorizeMasterData;
+    use \App\Traits\ResolvesStudentFromUser;
     public function index(SiswaDataTable $dataTable)
     {
         return $dataTable->render('pages.siswa.index');
@@ -289,49 +290,11 @@ class SiswaController extends Controller
 
     private function resolveSiswaAndOrangTua($user)
     {
-        $siswa = null;
-        $orangTua = null;
+        $siswa = $this->resolveStudentForCurrentUser();
+        $orangTua = $siswa ? $siswa->orangTua : null;
 
-        if ($user->roles === 'siswa') {
-            $siswa = Siswa::where('user_id', $user->id)->first();
-            if (!$siswa) {
-                $siswa = Siswa::where('nama_siswa', 'like', '%' . $user->name . '%')->first();
-                if (!$siswa) {
-                    $siswa = Siswa::whereNull('user_id')->first();
-                }
-                if ($siswa) {
-                    $siswa->update(['user_id' => $user->id]);
-                }
-            }
-            if ($siswa) {
-                $orangTua = $siswa->orangTua;
-            }
-        } elseif ($user->roles === 'orang tua') {
-            $selectedChildId = session('selected_child_id');
-            if ($selectedChildId) {
-                $siswa = Siswa::find($selectedChildId);
-            }
-            if (!$siswa) {
-                $orangTuaIds = OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
-                if ($user->email) {
-                    $extraIds = OrangTua::where('email', $user->email)->pluck('id')->toArray();
-                    $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
-                }
-                if ($user->name) {
-                    $nameBase = trim(explode(',', $user->name)[0]);
-                    $extraIds = OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
-                        ->orWhere('nama_ibu', 'like', '%' . $nameBase . '%')
-                        ->pluck('id')->toArray();
-                    $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
-                }
-                if (!empty($orangTuaIds)) {
-                    OrangTua::whereIn('id', $orangTuaIds)->whereNull('user_id')->update(['user_id' => $user->id]);
-                    $siswa = Siswa::whereIn('orang_tua_id', $orangTuaIds)->first();
-                }
-            }
-            if ($siswa) {
-                $orangTua = $siswa->orangTua;
-            }
+        if (!$orangTua && $user->roles === 'orang tua') {
+            $orangTua = OrangTua::where('user_id', $user->id)->first();
         }
 
         // Auto-create User account for Student if not linked

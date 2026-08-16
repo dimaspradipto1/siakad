@@ -65,7 +65,11 @@ class WaliKelasDataTable extends DataTable
 
     public function query(WaliKelas $model): QueryBuilder
     {
-        return $model->newQuery()->with(['guru.pegawai', 'kelas', 'tahunAjaran']);
+        return $model->newQuery()
+            ->with(['guru.pegawai', 'kelas', 'tahunAjaran'])
+            ->whereHas('guru.pegawai.user', function ($u) {
+                $u->whereRaw('LOWER(roles) = ?', ['wali kelas']);
+            });
     }
 
     public function html(): HtmlBuilder

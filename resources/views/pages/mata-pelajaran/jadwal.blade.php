@@ -28,7 +28,29 @@
                         </div>
                         
                         <form action="{{ route('matapelajaran.jadwal') }}" method="GET" class="row g-4">
-                            <div class="col-md-4">
+                            @php
+                                $hasMultipleChildren = isset($children) && $children->count() > 1;
+                                $colClass = $hasMultipleChildren ? 'col-md-3' : 'col-md-4';
+                            @endphp
+
+                            @if($hasMultipleChildren)
+                            <div class="col-md-3">
+                                <label for="child_id" class="form-label fw-semibold text-dark">Nama Anak <span class="text-danger">*</span></label>
+                                <select name="child_id" id="child_id" class="form-select py-2" style="border-radius: 8px;" onchange="this.form.submit()">
+                                    @foreach($children as $c)
+                                        @php
+                                            $cPk = $c->pembagianKelas->firstWhere('tahun_ajaran_id', $selectedTa);
+                                            $cKNama = $cPk?->kelas?->nama_kelas ?? ($c->kelas?->nama_kelas ?? '-');
+                                        @endphp
+                                        <option value="{{ $c->id }}" {{ (isset($mySiswa) && $mySiswa->id === $c->id) ? 'selected' : '' }}>
+                                            {{ $c->nama_siswa }} (Kelas {{ $cKNama }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+
+                            <div class="{{ $colClass }}">
                                 <label for="tahun_ajaran_id" class="form-label fw-semibold text-dark">Tahun Ajaran</label>
                                 <select name="tahun_ajaran_id" id="tahun_ajaran_id" class="form-select py-2" style="border-radius: 8px;" required>
                                     <option value="" disabled selected></option>
@@ -40,16 +62,21 @@
                                 </select>
                             </div>
                             
-                            <div class="col-md-4">
+                            <div class="{{ $colClass }}">
                                 <label for="semester_name" class="form-label fw-semibold text-dark">Semester</label>
                                 <select name="semester_name" id="semester_name" class="form-select py-2" style="border-radius: 8px;" required>
-                                    <option value="" disabled selected></option>
-                                    <option value="Semester 1 (Ganjil)" {{ $selectedSemName == 'Semester 1 (Ganjil)' ? 'selected' : '' }}>Semester 1 (Ganjil)</option>
-                                    <option value="Semester 2 (Genap)" {{ $selectedSemName == 'Semester 2 (Genap)' ? 'selected' : '' }}>Semester 2 (Genap)</option>
+                                    <option value="" disabled {{ empty($selectedSemName) ? 'selected' : '' }}>-- Pilih Semester --</option>
+                                    @if(isset($semesters))
+                                        @foreach($semesters as $sem)
+                                            <option value="{{ $sem->nama_semester }}" {{ $selectedSemName == $sem->nama_semester ? 'selected' : '' }}>
+                                                {{ $sem->nama_semester }}
+                                            </option>
+                                        @endforeach
+                                    @endif
                                 </select>
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="{{ $colClass }}">
                                 <label for="kelas_id" class="form-label fw-semibold text-dark">Kelas</label>
                                 <select name="kelas_id" id="kelas_id" class="form-select py-2" style="border-radius: 8px;" required>
                                     <option value="" disabled selected></option>

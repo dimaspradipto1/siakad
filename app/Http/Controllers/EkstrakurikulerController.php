@@ -138,16 +138,23 @@ class EkstrakurikulerController extends Controller
             $activeTa = \App\Models\TahunAjaran::query()->where('status', 'Aktif')->first() ?? \App\Models\TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? \App\Models\Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : \App\Models\Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = \App\Models\Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? \App\Models\Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 
@@ -170,7 +177,7 @@ class EkstrakurikulerController extends Controller
             }
         }
 
-        return view('pages.ekstrakurikuler.siswa', compact('kelas', 'tahunAjarans', 'ekskuls', 'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'students'));
+        return view('pages.ekstrakurikuler.siswa', compact('kelas', 'tahunAjarans', 'semesters', 'ekskuls', 'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'students'));
     }
 
     public function ekskulSiswaSave(\Illuminate\Http\Request $request)
@@ -230,16 +237,23 @@ class EkstrakurikulerController extends Controller
             $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 
@@ -254,7 +268,9 @@ class EkstrakurikulerController extends Controller
                 ->pluck('ekstrakurikuler');
         }
 
-        return view('pages.ekstrakurikuler.rekap_personal', compact('siswa', 'tahunAjarans', 'selectedTa', 'selectedSemName', 'selectedSem', 'ekskuls'));
+        $children = $this->getChildrenForParent();
+
+        return view('pages.ekstrakurikuler.rekap_personal', compact('siswa', 'children', 'tahunAjarans', 'semesters', 'selectedTa', 'selectedSemName', 'selectedSem', 'ekskuls'));
     }
 
     public function rekapEkskul(\Illuminate\Http\Request $request)
@@ -264,14 +280,7 @@ class EkstrakurikulerController extends Controller
         $mySiswa = null;
 
         if ($isPersonal) {
-            if ($user->roles === 'siswa') {
-                $mySiswa = Siswa::where('user_id', $user->id)->first();
-            } else {
-                $orangTua = OrangTua::where('user_id', $user->id)->first();
-                if ($orangTua) {
-                    $mySiswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
-                }
-            }
+            $mySiswa = $this->resolveStudentForCurrentUser();
         }
 
         $tahunAjarans = TahunAjaran::query()->get();
@@ -283,8 +292,14 @@ class EkstrakurikulerController extends Controller
             $activeTa = TahunAjaran::query()->where('status', 'Aktif')->first() ?? TahunAjaran::query()->first();
             $selectedTa = $activeTa ? $activeTa->id : null;
         }
-        if (!$selectedSemName) {
-            $selectedSemName = 'Semester 1 (Ganjil)';
+
+        $semesters = $selectedTa
+            ? Semester::query()->where('tahun_ajaran_id', $selectedTa)->get()
+            : Semester::query()->get();
+
+        $selectedSemName = $request->get('semester_name');
+        if (!$selectedSemName || !$semesters->contains('nama_semester', $selectedSemName)) {
+            $selectedSemName = $semesters->first()?->nama_semester ?? '';
         }
 
         $activeRole = $user?->activeRole() ?? $user?->roles;
@@ -314,10 +329,11 @@ class EkstrakurikulerController extends Controller
 
         $semester = null;
         if ($selectedTa && $selectedSemName) {
-            $semester = Semester::query()
-                ->where('tahun_ajaran_id', $selectedTa)
-                ->where('nama_semester', $selectedSemName)
-                ->first();
+            $semester = $semesters->firstWhere('nama_semester', $selectedSemName)
+                ?? Semester::query()
+                    ->where('tahun_ajaran_id', $selectedTa)
+                    ->where('nama_semester', $selectedSemName)
+                    ->first();
         }
         $selectedSem = $semester ? $semester->id : null;
 

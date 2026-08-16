@@ -13,6 +13,7 @@ use App\Models\ProfilSekolah;
 
 class DashboardController extends Controller
 {
+    use \App\Traits\ResolvesStudentFromUser;
     /**
      * Tampilkan halaman dashboard sesuai role pengguna.
      */
@@ -44,15 +45,13 @@ class DashboardController extends Controller
 
         if ($user && $activeRole === 'kepala sekolah') {
             $totalPegawai = \App\Models\Pegawai::count();
-            $guruCount = \App\Models\Pegawai::where(function($q) {
-                $q->where('jabatan', 'LIKE', '%Guru%')
-                  ->orWhere('jabatan', 'Kepala Sekolah');
-            })->count();
-            $adminCount = \App\Models\Pegawai::whereIn('jabatan', ['Operator Sekolah', 'Staf Tata Usaha'])->count();
-            $kebersihanCount = \App\Models\Pegawai::where('jabatan', 'LIKE', '%Kebersihan%')->count();
-            if ($kebersihanCount === 0) {
-                $kebersihanCount = 2; // mockup default
-            }
+
+            // Dynamic pegawai breakdown by role / jabatan
+            $pegawaiRoleCounts = \App\Models\Pegawai::with('user')->get()
+                ->groupBy(function($p) {
+                    return $p->user?->roles ? ucwords($p->user->roles) : ($p->jabatan ?? 'Pegawai');
+                })
+                ->map(fn($group) => $group->count());
 
             $totalSiswa = \App\Models\Siswa::count();
             $siswaCountByTingkat = [];
@@ -66,25 +65,72 @@ class DashboardController extends Controller
             $hadirCount = \App\Models\Kehadiran::whereHas('jenisKehadiran', function($q) {
                 $q->where('nama_kehadiran', 'Hadir');
             })->count();
-            $kehadiranPercentage = $kehadiranTotal > 0 ? round(($hadirCount / $kehadiranTotal) * 100) : 96;
+            $kehadiranPercentage = $kehadiranTotal > 0 ? round(($hadirCount / $kehadiranTotal) * 100) : 0;
 
-            $akademikAvg = \App\Models\Nilai::avg('nilai_raport');
-            $akademikPercentage = $akademikAvg ? round($akademikAvg) : 82;
+            $akademikAvg = \App\Models\Nilai::whereNotNull('nilai_raport')->avg('nilai_raport');
+            $akademikPercentage = $akademikAvg !== null ? round($akademikAvg) : 0;
 
             $schoolProfile = \App\Models\ProfilSekolah::first();
 
-            $chartData = \DB::table('nilais')
+            $allKelas = \App\Models\Kelas::orderBy('nama_kelas', 'asc')->get();
+            $chartDataRaw = \DB::table('nilais')
                 ->join('siswas', 'nilais.siswa_id', '=', 'siswas.id')
                 ->join('kelas', 'siswas.kelas_id', '=', 'kelas.id')
-                ->select('kelas.nama_kelas', \DB::raw('ROUND(AVG(nilai_raport)) as avg_nilai'))
+                ->whereNotNull('nilais.nilai_raport')
+                ->select('kelas.nama_kelas', \DB::raw('ROUND(AVG(nilais.nilai_raport)) as avg_nilai'))
                 ->groupBy('kelas.id', 'kelas.nama_kelas')
                 ->orderBy('kelas.nama_kelas', 'asc')
-                ->get();
+                ->pluck('avg_nilai', 'nama_kelas');
+
+            $chartLabels = [];
+            $chartValues = [];
+            foreach ($allKelas as $k) {
+                $chartLabels[] = $k->nama_kelas;
+                $chartValues[] = isset($chartDataRaw[$k->nama_kelas]) ? (int)$chartDataRaw[$k->nama_kelas] : 0;
+            }
 
             return view('layouts.dashboard.index', compact(
-                'user', 'activeRole', 'totalPegawai', 'guruCount', 'adminCount', 'kebersihanCount',
-                'totalSiswa', 'siswaCountByTingkat', 'kehadiranPercentage', 'hadirCount',
-                'akademikPercentage', 'schoolProfile', 'chartData'
+                'user', 'activeRole', 'totalPegawai', 'pegawaiRoleCounts',
+                'totalSiswa', 'siswaCountByTingkat', 'kehadiranPercentage', 'kehadiranTotal', 'hadirCount',
+                'akademikPercentage', 'akademikAvg', 'schoolProfile', 'chartLabels', 'chartValues'
+            ));
+        }
+
+        if ($user && in_array($activeRole, ['guru', 'wali kelas'])) {
+            $guru = $user->pegawai?->guru ?? $user->guru ?? \App\Models\Guru::whereHas('pegawai', fn($p) => $p->where('nama_pegawai', 'like', '%' . $user->name . '%'))->first();
+            $guruId = $guru ? $guru->id : 0;
+
+            $activeTa = \App\Models\TahunAjaran::where('status', 'Aktif')->first();
+            $activeTaId = $activeTa ? $activeTa->id : null;
+
+            $waliRecord = \App\Models\WaliKelas::where('guru_id', $guruId)
+                ->when($activeTaId, fn($q) => $q->where('tahun_ajaran_id', $activeTaId))
+                ->with('kelas')
+                ->first();
+            $kelasWaliNama = $waliRecord && $waliRecord->kelas ? $waliRecord->kelas->nama_kelas : null;
+
+            $mapelQuery = \App\Models\MataPelajaran::where('guru_id', $guruId)
+                ->when($activeTaId, function($q) use ($activeTaId) {
+                    $q->where('tahun_ajaran_id', $activeTaId)->orWhereNull('tahun_ajaran_id');
+                })
+                ->with('kelas');
+
+            $guruMapels = $mapelQuery->get();
+
+            $kelasDiajarList = $guruMapels->pluck('kelas.nama_kelas')->filter()->unique();
+            if ($kelasWaliNama && !$kelasDiajarList->contains($kelasWaliNama)) {
+                $kelasDiajarList->prepend($kelasWaliNama);
+            }
+
+            $guruKelasDisplay = $kelasDiajarList->isNotEmpty() ? $kelasDiajarList->implode(', ') : ($kelasWaliNama ? 'Kelas ' . $kelasWaliNama : '—');
+            $guruKelasCount = $kelasDiajarList->count();
+
+            $guruMapelNames = $guruMapels->pluck('nama_mata_pelajaran')->filter()->unique();
+            $guruMapelDisplay = $guruMapelNames->isNotEmpty() ? $guruMapelNames->implode(', ') : '—';
+            $guruMapelCount = $guruMapelNames->count();
+
+            return view('layouts.dashboard.index', compact(
+                'user', 'activeRole', 'guruKelasDisplay', 'guruKelasCount', 'guruMapelDisplay', 'guruMapelCount', 'kelasWaliNama'
             ));
         }
 
@@ -96,43 +142,24 @@ class DashboardController extends Controller
         }
 
         if ($user && $activeRole === 'orang tua') {
-            $orangTuaIds = \App\Models\OrangTua::where('user_id', $user->id)->pluck('id')->toArray();
+            $children = $this->getChildrenForParent($user);
+            $selectedChild = $this->resolveStudentForCurrentUser();
 
-            if ($user->email) {
-                $extraIds = \App\Models\OrangTua::where('email', $user->email)->pluck('id')->toArray();
-                $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
-            }
-
-            if ($user->name) {
-                $nameBase = trim(explode(',', $user->name)[0]);
-                $extraIds = \App\Models\OrangTua::where('nama_ayah', 'like', '%' . $nameBase . '%')
-                    ->orWhere('nama_ibu', 'like', '%' . $nameBase . '%')
-                    ->pluck('id')->toArray();
-                $orangTuaIds = array_unique(array_merge($orangTuaIds, $extraIds));
-            }
-
-            if (!empty($orangTuaIds)) {
-                \App\Models\OrangTua::whereIn('id', $orangTuaIds)->whereNull('user_id')->update(['user_id' => $user->id]);
-                $children = Siswa::whereIn('orang_tua_id', $orangTuaIds)->get();
-            } else {
-                $children = collect([]);
-            }
-
-
-
-            $hideNav = true;
-            return view('layouts.dashboard.index', compact('user', 'activeRole', 'children', 'hideNav'));
+            return view('layouts.dashboard.index', compact('user', 'activeRole', 'children', 'selectedChild'));
         }
 
         return view('layouts.dashboard.index', compact('user', 'activeRole'));
     }
 
-    public function selectChild($id)
+    public function selectChild(Request $request, $id)
     {
         $siswa = Siswa::find($id);
         if ($siswa) {
-            session(['selected_child_id' => $id]);
-            alert()->success('Berhasil!', 'Memilih data anak: ' . $siswa->nama_siswa);
+            session(['selected_child_id' => (int)$id]);
+            alert()->success('Berhasil!', 'Aktif melihat data anak: ' . $siswa->nama_siswa);
+        }
+        if ($request->filled('redirect')) {
+            return redirect($request->get('redirect'));
         }
         return redirect()->route('siswa.profile');
     }
