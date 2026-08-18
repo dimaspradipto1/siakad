@@ -76,6 +76,9 @@ class NilaiController extends Controller
             $pk = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)
                 ->where('tahun_ajaran_id', $selectedTa)
                 ->first();
+            if (!$pk) {
+                $pk = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)->latest('id')->first();
+            }
             $selectedKelas = $pk ? $pk->kelas_id : $siswa->kelas_id;
             $kelas = Kelas::query()->where('id', $selectedKelas)->get();
 
@@ -1434,6 +1437,9 @@ class NilaiController extends Controller
         $pk = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)
             ->where('tahun_ajaran_id', $selectedTa)
             ->first();
+        if (!$pk) {
+            $pk = \App\Models\PembagianKelas::where('siswa_id', $siswa->id)->latest('id')->first();
+        }
         $kelasId = $pk ? $pk->kelas_id : $siswa->kelas_id;
         $kelasModel = Kelas::query()->find($kelasId);
         $school = \App\Models\ProfilSekolah::query()->first();

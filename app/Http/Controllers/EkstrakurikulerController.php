@@ -309,6 +309,9 @@ class EkstrakurikulerController extends Controller
             $pk = PembagianKelas::where('siswa_id', $mySiswa->id)
                 ->where('tahun_ajaran_id', $selectedTa)
                 ->first();
+            if (!$pk) {
+                $pk = PembagianKelas::where('siswa_id', $mySiswa->id)->latest('id')->first();
+            }
             $selectedKelas = $pk ? $pk->kelas_id : $mySiswa->kelas_id;
             $kelas = Kelas::query()->where('id', $selectedKelas)->get();
         } elseif ($isWali) {

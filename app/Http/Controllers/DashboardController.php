@@ -144,8 +144,9 @@ class DashboardController extends Controller
         if ($user && $activeRole === 'orang tua') {
             $children = $this->getChildrenForParent($user);
             $selectedChild = $this->resolveStudentForCurrentUser();
+            $hideNav = true;
 
-            return view('layouts.dashboard.index', compact('user', 'activeRole', 'children', 'selectedChild'));
+            return view('layouts.dashboard.index', compact('user', 'activeRole', 'children', 'selectedChild', 'hideNav'));
         }
 
         return view('layouts.dashboard.index', compact('user', 'activeRole'));

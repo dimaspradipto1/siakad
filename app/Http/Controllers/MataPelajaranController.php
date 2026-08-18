@@ -204,6 +204,9 @@ class MataPelajaranController extends Controller
             $pk = \App\Models\PembagianKelas::where('siswa_id', $mySiswa->id)
                 ->where('tahun_ajaran_id', $selectedTa)
                 ->first();
+            if (!$pk) {
+                $pk = \App\Models\PembagianKelas::where('siswa_id', $mySiswa->id)->latest('id')->first();
+            }
             $selectedKelas = $pk ? $pk->kelas_id : $mySiswa->kelas_id;
             $kelas = Kelas::query()->where('id', $selectedKelas)->get();
         } elseif ($isWali) {

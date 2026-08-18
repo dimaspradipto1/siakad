@@ -86,69 +86,64 @@
                 </div>
             </div>
         @elseif ($activeRole === 'orang tua')
-            <div class="row">
-                <div class="col-12 mb-4">
-                    <div class="card border-0 bg-light shadow-sm" style="border-radius: 12px;">
-                        <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                            <div>
-                                <h4 class="text-dark fw-bold mb-1">Selamat Datang, {{ $user->name }}</h4>
-                                <p class="text-secondary mb-0" style="font-size: 0.95rem;">
-                                    @if(isset($selectedChild) && $selectedChild)
-                                        Sedang aktif melihat data anak: <strong class="text-primary">{{ $selectedChild->nama_siswa }}</strong>
+            <div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+                <div class="col-lg-10 col-xl-9">
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-4 p-md-5">
+                            <div class="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h4 class="text-dark fw-bold mb-1" style="font-size: 1.35rem;">Selamat Datang Bapak/Ibu</h4>
+                                    <p class="text-muted small mb-0" style="font-size: 0.9rem;">Silakan pilih data anak yang ingin Anda lihat:</p>
+                                </div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-danger btn-sm px-3 rounded-pill fw-semibold d-flex align-items-center gap-1" style="font-size: 0.85rem; border-color: #f87171; color: #ef4444;">
+                                        <i class="bi bi-box-arrow-right"></i> Keluar
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="row g-4 pt-2">
+                                @if(isset($children) && $children->count() > 0)
+                                    @foreach($children as $child)
                                         @php
                                             $activeTa = \App\Models\TahunAjaran::where('status', 'Aktif')->first();
-                                            $pk = \App\Models\PembagianKelas::where('siswa_id', $selectedChild->id)->where('tahun_ajaran_id', $activeTa?->id)->first();
-                                            $kNama = $pk?->kelas?->nama_kelas ?? ($selectedChild->kelas?->nama_kelas ?? '-');
+                                            $pk = \App\Models\PembagianKelas::where('siswa_id', $child->id)->where('tahun_ajaran_id', $activeTa?->id)->first();
+                                            if (!$pk) {
+                                                $pk = \App\Models\PembagianKelas::where('siswa_id', $child->id)->latest('id')->first();
+                                            }
+                                            $kNama = $pk?->kelas?->nama_kelas ?? ($child->kelas?->nama_kelas ?? '-');
                                         @endphp
-                                        (Kelas {{ $kNama }})
-                                    @else
-                                        Pilih data anak di bawah ini untuk melihat informasi akademik:
-                                    @endif
-                                </p>
+                                        <div class="col-md-{{ $children->count() === 1 ? '12' : ($children->count() === 2 ? '6' : '4') }}">
+                                            <div class="card h-100 border-0 shadow-none text-center p-4" style="border-radius: 14px; background-color: #f8f9fa;">
+                                                <div class="mb-3">
+                                                    <div class="d-inline-flex align-items-center justify-content-center bg-dark text-white rounded-circle shadow-sm" style="width: 58px; height: 58px; font-size: 1.6rem; background-color: #1e2125 !important;">
+                                                        <i class="bi bi-person-fill"></i>
+                                                    </div>
+                                                </div>
+                                                <h5 class="fw-bold text-dark mb-1" style="font-size: 1.05rem;">{{ $child->nama_siswa }}</h5>
+                                                <div class="mb-2">
+                                                    <span class="badge bg-white text-secondary border fw-semibold px-2 py-1" style="font-size: 0.75rem; border-radius: 6px;">
+                                                        Kelas {{ $kNama }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-muted small mb-4" style="font-size: 0.85rem;">NISN. {{ $child->nisn }}</p>
+
+                                                <a href="{{ route('orangtua.select-child', ['id' => $child->id, 'redirect' => route('siswa.profile')]) }}" class="btn btn-dark w-100 py-2 fw-semibold" style="border-radius: 8px; background-color: #1e2125; border-color: #1e2125; font-size: 0.9rem;">
+                                                    Lihat Data
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="col-12 text-center py-4">
+                                        <p class="text-muted">Data anak tidak ditemukan.</p>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
-
-                @if(isset($children) && $children->count() > 0)
-                    <div class="col-12 mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Data Anak Anda</h5>
-                            <span class="badge bg-primary rounded-pill px-3 py-2">{{ $children->count() }} Anak Terdaftar</span>
-                        </div>
-                        <div class="row g-3">
-                            @foreach($children as $child)
-                                @php
-                                    $activeTa = \App\Models\TahunAjaran::where('status', 'Aktif')->first();
-                                    $pk = \App\Models\PembagianKelas::where('siswa_id', $child->id)->where('tahun_ajaran_id', $activeTa?->id)->first();
-                                    $kNama = $pk?->kelas?->nama_kelas ?? ($child->kelas?->nama_kelas ?? '-');
-                                    $isActiveChild = isset($selectedChild) && $selectedChild && $selectedChild->id === $child->id;
-                                @endphp
-                                <div class="col-md-{{ $children->count() === 1 ? '12' : ($children->count() === 2 ? '6' : '4') }}">
-                                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px; {{ $isActiveChild ? 'border: 2px solid #0d6efd !important;' : '' }}">
-                                        <div class="card-body p-4 text-center">
-                                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle {{ $isActiveChild ? 'bg-primary text-white' : 'bg-light text-primary' }} mb-3 shadow-sm" style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: bold;">
-                                                {{ strtoupper(substr($child->nama_siswa, 0, 1)) }}
-                                            </div>
-                                            <h5 class="fw-bold text-dark mb-1">{{ $child->nama_siswa }}</h5>
-                                            <p class="text-muted small mb-3">NISN: {{ $child->nisn }} &bull; <span class="badge bg-light text-dark border">Kelas {{ $kNama }}</span></p>
-
-                                            <div class="d-grid gap-2">
-                                                <a href="{{ route('orangtua.select-child', ['id' => $child->id, 'redirect' => route('siswa.profile')]) }}" class="btn {{ $isActiveChild ? 'btn-primary' : 'btn-outline-primary' }} btn-sm py-2 fw-bold" style="border-radius: 8px;">
-                                                    @if($isActiveChild)
-                                                        <i class="bi bi-check-circle me-1"></i> Sedang Dipilih &bull; Lihat Profile
-                                                    @else
-                                                        Pilih & Lihat Data Anak
-                                                    @endif
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
             </div>
         @elseif ($activeRole === 'kepala sekolah')
             <div class="row">
