@@ -181,6 +181,13 @@
                                   $select.append('<option value="" disabled selected>-- Pilih Semester --</option>');
                               }
                               
+                              if (!data || data.length === 0) {
+                                  data = [
+                                      { id: 'Semester 1 (Ganjil)', nama_semester: 'Semester 1 (Ganjil)' },
+                                      { id: 'Semester 2 (Genap)', nama_semester: 'Semester 2 (Genap)' }
+                                  ];
+                              }
+                              
                               $.each(data, function(index, sem) {
                                   var val = isIdSelect ? sem.id : sem.nama_semester;
                                   var selectedAttr = (currentVal == val) ? ' selected' : '';

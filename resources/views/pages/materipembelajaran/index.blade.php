@@ -47,11 +47,14 @@
                                 <label for="semester_name" class="form-label fw-semibold text-dark">Semester</label>
                                 <select id="semester_name" name="semester_name" class="form-select py-2" style="border-radius: 8px;">
                                     <option value="">Semua Semester</option>
-                                    @if(isset($semesters))
-                                        @foreach($semesters as $sem)
-                                            <option value="{{ $sem->nama_semester }}">{{ $sem->nama_semester }}</option>
-                                        @endforeach
-                                    @endif
+                                    @php
+                                        $semList = (isset($semesters) && $semesters->isNotEmpty()) 
+                                            ? $semesters->pluck('nama_semester')->unique() 
+                                            : collect(['Semester 1 (Ganjil)', 'Semester 2 (Genap)']);
+                                    @endphp
+                                    @foreach($semList as $semName)
+                                        <option value="{{ $semName }}">{{ $semName }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 

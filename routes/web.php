@@ -59,7 +59,19 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::resource('matapelajaranaktif', MataPelajaranAktifController::class);
     Route::resource('tahun-ajaran', TahunAjaranController::class);
     Route::get('api/semesters-by-ta/{tahun_ajaran_id}', function ($tahun_ajaran_id) {
-        return response()->json(\App\Models\Semester::query()->where('tahun_ajaran_id', $tahun_ajaran_id)->orderBy('id')->get());
+        $semesters = \App\Models\Semester::query()->where('tahun_ajaran_id', $tahun_ajaran_id)->orderBy('id')->get();
+        if ($semesters->isEmpty()) {
+            $allSemesters = \App\Models\Semester::query()->get();
+            if ($allSemesters->isNotEmpty()) {
+                $semesters = $allSemesters->unique('nama_semester')->values();
+            } else {
+                $semesters = collect([
+                    (object)['id' => 1, 'nama_semester' => 'Semester 1 (Ganjil)'],
+                    (object)['id' => 2, 'nama_semester' => 'Semester 2 (Genap)']
+                ]);
+            }
+        }
+        return response()->json($semesters);
     })->name('api.semesters-by-ta');
     Route::resource('semester', SemesterController::class);
     Route::resource('kelas', KelasController::class);
