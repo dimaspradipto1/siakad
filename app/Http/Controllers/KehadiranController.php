@@ -441,14 +441,7 @@ class KehadiranController extends Controller
         $mySiswa = null;
 
         if ($isPersonal) {
-            if ($user->roles === 'siswa') {
-                $mySiswa = Siswa::where('user_id', $user->id)->first();
-            } else {
-                $orangTua = OrangTua::where('user_id', $user->id)->first();
-                if ($orangTua) {
-                    $mySiswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
-                }
-            }
+            $mySiswa = $this->resolveStudentForCurrentUser();
         }
 
         $tahunAjarans = TahunAjaran::query()->get();
@@ -520,6 +513,12 @@ class KehadiranController extends Controller
             $mapelsQuery->where('guru_id', $guruId);
         }
 
+        if ($isPersonal && $selectedKelas) {
+            $mapelsQuery->where(function($q) use ($selectedKelas) {
+                $q->where('kelas_id', $selectedKelas)->orWhereNull('kelas_id');
+            });
+        }
+
         $mapels = $mapelsQuery->orderByRaw('CASE WHEN kelas_id IS NOT NULL THEN 0 ELSE 1 END')
             ->orderBy('nama_mata_pelajaran', 'asc')
             ->get()
@@ -588,14 +587,7 @@ class KehadiranController extends Controller
         $mySiswa = null;
 
         if ($isPersonal) {
-            if ($user->roles === 'siswa') {
-                $mySiswa = Siswa::where('user_id', $user->id)->first();
-            } else {
-                $orangTua = OrangTua::where('user_id', $user->id)->first();
-                if ($orangTua) {
-                    $mySiswa = Siswa::where('orang_tua_id', $orangTua->id)->first();
-                }
-            }
+            $mySiswa = $this->resolveStudentForCurrentUser();
         }
 
         $selectedTa = $request->get('tahun_ajaran_id');
