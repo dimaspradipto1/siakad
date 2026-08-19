@@ -106,9 +106,9 @@
                                 </div>
                             </div>
 
-                            {{-- Row 4: Alamat Lengkap, No. Whatsapp, Role --}}
+                            {{-- Row 4: Alamat Lengkap, No. Whatsapp --}}
                             <div class="row g-3 mb-3">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label for="alamat" class="form-label fw-medium text-secondary">Alamat Lengkap</label>
                                     <textarea id="alamat" name="alamat" rows="2" 
                                         class="form-control rounded-3 @error('alamat') is-invalid @enderror" 
@@ -116,26 +116,45 @@
                                     @error('alamat')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
 
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label for="nomor_wa" class="form-label fw-medium text-secondary">No. Whatsapp</label>
                                     <input type="text" id="nomor_wa" name="nomor_wa" 
                                         class="form-control rounded-3 @error('nomor_wa') is-invalid @enderror" 
                                         value="{{ old('nomor_wa', $pegawai->nomor_wa) }}" placeholder="081234567890">
                                     @error('nomor_wa')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
+                            </div>
 
-                                <div class="col-md-4">
-                                    <label for="role" class="form-label fw-medium text-secondary">Role</label>
-                                    <select id="role" name="role" class="form-select rounded-3 @error('role') is-invalid @enderror">
-                                        @php $currentRole = $pegawai->user->roles ?? strtolower($pegawai->jabatan); @endphp
-                                        <option value="pegawai" {{ old('role', $currentRole) == 'pegawai' ? 'selected' : '' }}>Pegawai</option>
-                                        <option value="guru" {{ old('role', $currentRole) == 'guru' ? 'selected' : '' }}>Guru</option>
-                                        <option value="wali kelas" {{ old('role', $currentRole) == 'wali kelas' ? 'selected' : '' }}>Wali Kelas</option>
-                                        <option value="kepala sekolah" {{ old('role', $currentRole) == 'kepala sekolah' ? 'selected' : '' }}>Kepala Sekolah</option>
-                                        <option value="admin" {{ old('role', $currentRole) == 'admin' ? 'selected' : '' }}>Admin</option>
-                                    </select>
-                                    @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            {{-- Row 5: Role Akses (Bisa Lebih Dari Satu) --}}
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-secondary d-block">
+                                    Role Akses <span class="text-danger">*</span>
+                                    <small class="text-muted fw-normal d-block">Pilih satu atau lebih role untuk pegawai ini:</small>
+                                </label>
+                                <div class="row g-2 p-3 bg-light rounded-3 border @error('roles') border-danger @enderror @error('role') border-danger @enderror">
+                                    @php
+                                        $currentRoles = $pegawai->user ? $pegawai->user->getRolesList() : [strtolower($pegawai->jabatan ?: 'pegawai')];
+                                        $oldRoles = old('roles', $currentRoles);
+                                        $availableRoles = ['pegawai', 'guru', 'wali kelas', 'kepala sekolah', 'admin'];
+                                    @endphp
+                                    @foreach ($availableRoles as $r)
+                                        @php
+                                            $isChecked = is_array($oldRoles) ? in_array($r, $oldRoles) : ($oldRoles == $r);
+                                        @endphp
+                                        <div class="col-6 col-md">
+                                            <div class="form-check p-2 bg-white rounded border d-flex align-items-center gap-2">
+                                                <input class="form-check-input ms-0 me-2" type="checkbox" name="roles[]" 
+                                                       id="role_{{ Str::slug($r) }}" value="{{ $r }}"
+                                                       {{ $isChecked ? 'checked' : '' }}>
+                                                <label class="form-check-label fw-medium text-dark cursor-pointer text-capitalize" for="role_{{ Str::slug($r) }}">
+                                                    {{ $r }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
+                                @error('roles')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                @error('role')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
 
                             {{-- Row 5: Password Baru (Opsional), Konfirmasi Password, Status --}}

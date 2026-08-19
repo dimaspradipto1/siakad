@@ -35,7 +35,8 @@ class PegawaiRequest extends FormRequest
             'alamat'              => ['nullable', 'string'],
 
             'email'               => ['nullable', 'email'],
-            'role'                => ['nullable', 'string'],
+            'role'                => ['nullable'],
+            'roles'               => ['nullable'],
             'password'            => ['nullable', 'string', 'min:6', 'confirmed'],
         ];
     }

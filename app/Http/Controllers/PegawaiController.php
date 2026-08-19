@@ -40,8 +40,22 @@ class PegawaiController extends Controller
     {
         $validated = $request->validated();
 
-        $role = $request->role ?: 'pegawai';
-        $jabatan = $request->jabatan ?: ucwords($role);
+        $rolesInput = $request->input('roles') ?: $request->input('role');
+        if (is_array($rolesInput)) {
+            $rolesList = array_values(array_filter($rolesInput));
+            $rolesStr = implode(',', $rolesList);
+            $primaryRole = $rolesList[0] ?? 'pegawai';
+        } elseif (is_string($rolesInput) && !empty($rolesInput)) {
+            $rolesList = array_map('trim', explode(',', $rolesInput));
+            $rolesStr = $rolesInput;
+            $primaryRole = $rolesList[0] ?? 'pegawai';
+        } else {
+            $rolesList = ['pegawai'];
+            $rolesStr = 'pegawai';
+            $primaryRole = 'pegawai';
+        }
+
+        $jabatan = $request->jabatan ?: ucwords($primaryRole);
 
         // 1. Create User Account
         $username = preg_replace('/[^A-Za-z0-9]/', '', strtolower($request->nip));
@@ -54,8 +68,12 @@ class PegawaiController extends Controller
                 'username' => $username,
                 'email' => $email,
                 'password' => Hash::make($request->password ?: 'password'),
-                'roles' => $role,
+                'roles' => $rolesStr,
                 'is_active' => ($request->status ?? 'Aktif') === 'Aktif',
+            ]);
+        } else {
+            $user->update([
+                'roles' => $rolesStr,
             ]);
         }
 
@@ -76,8 +94,8 @@ class PegawaiController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        // 3. Auto create Guru record if role is guru or wali kelas
-        if (in_array(strtolower($role), ['guru', 'wali kelas'])) {
+        // 3. Auto create Guru record if any role is guru or wali kelas
+        if (count(array_intersect(array_map('strtolower', $rolesList), ['guru', 'wali kelas'])) > 0) {
             \App\Models\Guru::firstOrCreate([
                 'pegawai_id' => $pegawai->id,
             ], [
@@ -124,8 +142,22 @@ class PegawaiController extends Controller
     {
         $validated = $request->validated();
 
-        $role = $request->role ?: ($pegawai->user->roles ?? 'pegawai');
-        $jabatan = $request->jabatan ?: ucwords($role);
+        $rolesInput = $request->input('roles') ?: $request->input('role');
+        if (is_array($rolesInput)) {
+            $rolesList = array_values(array_filter($rolesInput));
+            $rolesStr = implode(',', $rolesList);
+            $primaryRole = $rolesList[0] ?? 'pegawai';
+        } elseif (is_string($rolesInput) && !empty($rolesInput)) {
+            $rolesList = array_map('trim', explode(',', $rolesInput));
+            $rolesStr = $rolesInput;
+            $primaryRole = $rolesList[0] ?? 'pegawai';
+        } else {
+            $rolesList = $pegawai->user ? $pegawai->user->getRolesList() : ['pegawai'];
+            $rolesStr = implode(',', $rolesList);
+            $primaryRole = $rolesList[0] ?? 'pegawai';
+        }
+
+        $jabatan = $request->jabatan ?: ucwords($primaryRole);
 
         // Update linked User Account
         $user = $pegawai->user;
@@ -143,7 +175,7 @@ class PegawaiController extends Controller
                     'username' => $username,
                     'email' => $email,
                     'password' => Hash::make($request->filled('password') ? $request->password : 'password'),
-                    'roles' => $role,
+                    'roles' => $rolesStr,
                     'is_active' => ($request->status ?? 'Aktif') === 'Aktif',
                 ]);
             }
@@ -154,7 +186,7 @@ class PegawaiController extends Controller
         if ($user) {
             $userData = [
                 'name' => $request->nama_pegawai,
-                'roles' => $role,
+                'roles' => $rolesStr,
                 'is_active' => ($request->status ?? 'Aktif') === 'Aktif',
             ];
             if ($request->filled('email')) {
@@ -182,7 +214,7 @@ class PegawaiController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        if (in_array(strtolower($role), ['guru', 'wali kelas'])) {
+        if (count(array_intersect(array_map('strtolower', $rolesList), ['guru', 'wali kelas'])) > 0) {
             \App\Models\Guru::updateOrCreate([
                 'pegawai_id' => $pegawai->id,
             ], [
