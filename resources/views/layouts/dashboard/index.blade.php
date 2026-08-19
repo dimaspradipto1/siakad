@@ -24,62 +24,122 @@
     @endif
 
     <section class="section dashboard">
-        @if ($isDualRoleSelection ?? false)
+        @if ($isMultiRoleSelection ?? ($isDualRoleSelection ?? false))
             <div class="row justify-content-center align-items-center" style="min-height: 75vh;">
-                <div class="col-lg-8 col-md-10">
-                    <div class="card border-0 shadow-lg mb-4" style="border-radius: 16px;">
+                <div class="col-lg-10 col-xl-9">
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; background: #ffffff;">
                         <div class="card-body p-4 p-md-5">
-                            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start mb-4 pb-2 border-bottom">
                                 <div>
-                                    <h4 class="text-dark fw-bold mb-1">Selamat Datang, {{ $user->name }}</h4>
-                                    <p class="text-muted small mb-0">Anda memiliki 2 peran. Silakan pilih mode login Anda:</p>
+                                    <h4 class="text-dark fw-bold mb-1" style="font-size: 1.35rem;">Selamat Datang, {{ $user->name }}</h4>
+                                    <p class="text-muted small mb-0" style="font-size: 0.9rem;">Anda memiliki <strong>{{ count($userRoles ?? []) }}</strong> peran akses. Silakan pilih peran yang ingin Anda gunakan:</p>
                                 </div>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button type="submit" class="btn btn-outline-danger btn-sm px-3 rounded-pill fw-semibold">
-                                        <i class="bi bi-box-arrow-right me-1"></i> Keluar
+                                    <button type="submit" class="btn btn-outline-danger btn-sm px-3 rounded-pill fw-semibold d-flex align-items-center gap-1" style="font-size: 0.85rem; border-color: #f87171; color: #ef4444;">
+                                        <i class="bi bi-box-arrow-right"></i> Keluar
                                     </button>
                                 </form>
                             </div>
                             
-                            <div class="row g-4 pt-2">
-                                <!-- Option 1: Guru Pengajar -->
-                                <div class="col-md-6">
-                                    <div class="card h-100 border-0 shadow-sm text-center p-4" style="border-radius: 14px; background-color: #f8f9fa;">
-                                        <div class="mb-3">
-                                            <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle shadow-sm" style="width: 64px; height: 64px; font-size: 1.8rem;">
-                                                <i class="bi bi-person-video3"></i>
-                                            </div>
-                                        </div>
-                                        <h5 class="fw-bold text-dark mb-2">Guru Pengajar</h5>
-                                        <p class="text-muted small mb-4">Input Nilai Harian, MID, PAS, Kehadiran, & Materi Pembelajaran.</p>
-                                        <form method="POST" action="{{ route('switch-role', 'guru') }}">
-                                            @csrf
-                                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" style="border-radius: 10px;">
-                                                Masuk sebagai Guru
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
+                            <div class="row g-4 pt-2 justify-content-center">
+                                @php
+                                    $rolesToDisplay = $userRoles ?? ['guru', 'wali kelas'];
+                                    $countRoles = count($rolesToDisplay);
+                                    $colClass = $countRoles === 1 ? 'col-md-8' : ($countRoles === 2 ? 'col-md-6' : 'col-md-6 col-lg-4');
+                                    
+                                    $roleMeta = [
+                                        'admin' => [
+                                            'title' => 'Administrator',
+                                            'desc' => 'Kelola Master Data, Manajemen Pengguna, Rombel, & Pengaturan Sistem.',
+                                            'icon' => 'bi bi-shield-lock-fill',
+                                            'icon_bg' => '#dc3545',
+                                            'btn_class' => 'btn-danger',
+                                            'btn_text' => 'Masuk sebagai Admin',
+                                        ],
+                                        'guru' => [
+                                            'title' => 'Guru Pengajar',
+                                            'desc' => 'Input Nilai Harian, MID, PAS, Kehadiran Siswa, & Materi Pembelajaran.',
+                                            'icon' => 'bi bi-person-video3',
+                                            'icon_bg' => '#4154f1',
+                                            'btn_class' => 'btn-primary',
+                                            'btn_text' => 'Masuk sebagai Guru',
+                                        ],
+                                        'wali kelas' => [
+                                            'title' => 'Wali Kelas ' . ($kelasWaliNama ? "($kelasWaliNama)" : ''),
+                                            'desc' => 'Rekap Nilai Raport, Cetak Raport, Rekap Kehadiran, & Catatan Siswa.',
+                                            'icon' => 'bi bi-easel-fill',
+                                            'icon_bg' => '#212529',
+                                            'btn_class' => 'btn-dark',
+                                            'btn_text' => 'Masuk sebagai Wali Kelas',
+                                        ],
+                                        'kepala sekolah' => [
+                                            'title' => 'Kepala Sekolah',
+                                            'desc' => 'Monitoring Statistik Sekolah, Laporan Akademik, & Kehadiran Siswa.',
+                                            'icon' => 'bi bi-award-fill',
+                                            'icon_bg' => '#198754',
+                                            'btn_class' => 'btn-success',
+                                            'btn_text' => 'Masuk sebagai Kepala Sekolah',
+                                        ],
+                                        'pegawai' => [
+                                            'title' => 'Pegawai / Staf',
+                                            'desc' => 'Layanan Administrasi, Informasi Kepegawaian, & Pengumuman.',
+                                            'icon' => 'bi bi-person-badge-fill',
+                                            'icon_bg' => '#6c757d',
+                                            'btn_class' => 'btn-secondary',
+                                            'btn_text' => 'Masuk sebagai Pegawai',
+                                        ],
+                                        'siswa' => [
+                                            'title' => 'Siswa',
+                                            'desc' => 'Lihat Profil Siswa, Nilai Raport, Kehadiran, & Jadwal Mapel.',
+                                            'icon' => 'bi bi-mortarboard-fill',
+                                            'icon_bg' => '#0d6efd',
+                                            'btn_class' => 'btn-primary',
+                                            'btn_text' => 'Masuk sebagai Siswa',
+                                        ],
+                                        'orang tua' => [
+                                            'title' => 'Orang Tua / Wali',
+                                            'desc' => 'Pantau Nilai, Raport, Kehadiran, & Catatan Perkembangan Anak.',
+                                            'icon' => 'bi bi-people-fill',
+                                            'icon_bg' => '#ff771d',
+                                            'btn_class' => 'btn-warning text-dark',
+                                            'btn_text' => 'Masuk sebagai Orang Tua',
+                                        ],
+                                    ];
+                                @endphp
 
-                                <!-- Option 2: Wali Kelas -->
-                                <div class="col-md-6">
-                                    <div class="card h-100 border-0 shadow-sm text-center p-4" style="border-radius: 14px; background-color: #f8f9fa;">
-                                        <div class="mb-3">
-                                            <div class="d-inline-flex align-items-center justify-content-center bg-dark text-white rounded-circle shadow-sm" style="width: 64px; height: 64px; font-size: 1.8rem;">
-                                                <i class="bi bi-easel"></i>
+                                @foreach($rolesToDisplay as $rName)
+                                    @php
+                                        $meta = $roleMeta[$rName] ?? [
+                                            'title' => ucwords($rName),
+                                            'desc' => 'Akses sistem sesuai peran ' . ucwords($rName) . '.',
+                                            'icon' => 'bi bi-person-fill',
+                                            'icon_bg' => '#343a40',
+                                            'btn_class' => 'btn-dark',
+                                            'btn_text' => 'Masuk sebagai ' . ucwords($rName),
+                                        ];
+                                        $slug = str_replace(' ', '-', $rName);
+                                    @endphp
+                                    <div class="{{ $colClass }}">
+                                        <div class="card h-100 border-0 shadow-none text-center p-4" style="border-radius: 14px; background-color: #f8f9fa;">
+                                            <div class="mb-3">
+                                                <div class="d-inline-flex align-items-center justify-content-center text-white rounded-circle shadow-sm" 
+                                                     style="width: 60px; height: 60px; font-size: 1.7rem; background-color: {{ $meta['icon_bg'] }} !important;">
+                                                    <i class="{{ $meta['icon'] }}"></i>
+                                                </div>
                                             </div>
+                                            <h5 class="fw-bold text-dark mb-1" style="font-size: 1.05rem;">{{ $meta['title'] }}</h5>
+                                            <p class="text-muted small mb-4" style="font-size: 0.85rem; min-height: 40px;">{{ $meta['desc'] }}</p>
+                                            
+                                            <form method="POST" action="{{ route('switch-role', $slug) }}">
+                                                @csrf
+                                                <button type="submit" class="btn {{ $meta['btn_class'] }} w-100 py-2 fw-semibold shadow-sm" style="border-radius: 8px; font-size: 0.9rem;">
+                                                    {{ $meta['btn_text'] }}
+                                                </button>
+                                            </form>
                                         </div>
-                                        <h5 class="fw-bold text-dark mb-2">Wali Kelas ({{ $kelasWaliNama ?? 'Perwalian' }})</h5>
-                                        <p class="text-muted small mb-4">Rekap Nilai Raport, Cetak Raport, Rekap Kehadiran, & Catatan Siswa.</p>
-                                        <form method="POST" action="{{ route('switch-role', 'wali-kelas') }}">
-                                            @csrf
-                                            <button type="submit" class="btn btn-dark w-100 py-2 fw-bold" style="border-radius: 10px; background-color: #212529;">
-                                                Masuk sebagai Wali Kelas
-                                            </button>
-                                        </form>
                                     </div>
-                                </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>

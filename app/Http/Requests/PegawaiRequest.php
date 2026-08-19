@@ -53,6 +53,7 @@ class PegawaiRequest extends FormRequest
             'tempat_lahir.required'  => 'Tempat lahir wajib diisi.',
             'tgl_lahir.required'     => 'Tanggal lahir wajib diisi.',
             'agama.required'         => 'Agama wajib dipilih.',
+            'password.min'           => 'Password minimal :min karakter.',
             'password.confirmed'     => 'Konfirmasi Password tidak cocok.',
         ];
     }

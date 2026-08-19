@@ -145,8 +145,8 @@
                                     <div class="input-group">
                                         <input type="password" id="password" name="password" 
                                             class="form-control rounded-start-3 @error('password') is-invalid @enderror" 
-                                            value="{{ old('password') }}"
-                                            placeholder="Kosongkan jika tidak diubah">
+                                            placeholder="Kosongkan jika tidak diubah"
+                                            autocomplete="new-password">
                                         <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password">
                                             <i class="bi bi-eye"></i>
                                         </button>
@@ -158,13 +158,14 @@
                                     <label for="password_confirmation" class="form-label fw-medium text-secondary">Konfirmasi Password</label>
                                     <div class="input-group">
                                         <input type="password" id="password_confirmation" name="password_confirmation" 
-                                            class="form-control rounded-start-3" 
-                                            value="{{ old('password_confirmation') }}"
-                                            placeholder="Konfirmasi Password Baru">
+                                            class="form-control rounded-start-3 @error('password_confirmation') is-invalid @enderror" 
+                                            placeholder="Konfirmasi Password Baru"
+                                            autocomplete="new-password">
                                         <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password_confirmation">
                                             <i class="bi bi-eye"></i>
                                         </button>
                                     </div>
+                                    @error('password_confirmation')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                 </div>
 
                                 <div class="col-md-4">

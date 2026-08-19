@@ -17,6 +17,7 @@ class Checkrole
         'guru',
         'wali kelas',
         'kepala sekolah',
+        'pegawai',
         'siswa',
         'orang tua',
     ];
@@ -33,7 +34,18 @@ class Checkrole
                 ->withErrors(['email' => 'Silakan login terlebih dahulu.']);
         }
 
-        if (!in_array(Auth::user()->roles, $this->allowedRoles)) {
+        $user = Auth::user();
+        $userRoles = $user->getRolesList();
+
+        $hasAllowed = false;
+        foreach ($userRoles as $r) {
+            if (in_array($r, $this->allowedRoles)) {
+                $hasAllowed = true;
+                break;
+            }
+        }
+
+        if (!$hasAllowed) {
             abort(403, 'Akses ditolak. Role Anda tidak memiliki izin.');
         }
 

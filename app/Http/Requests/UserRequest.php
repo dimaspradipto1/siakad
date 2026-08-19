@@ -26,7 +26,7 @@ class UserRequest extends FormRequest
             'name'      => ['required', 'string', 'max:100'],
             'email'     => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($userId)],
             'password'  => $userId ? ['nullable', 'string', 'min:6', 'confirmed'] : ['required', 'string', 'min:6', 'confirmed'],
-            'roles'     => ['required', \Illuminate\Validation\Rule::in(\App\Models\User::ROLES)],
+            'roles'     => ['required'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

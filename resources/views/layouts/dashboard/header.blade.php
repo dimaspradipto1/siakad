@@ -44,9 +44,10 @@
 
         @php
             $authUser = Auth::user();
-            $canSwitchRole = $authUser && $authUser->roles === 'guru' && $authUser->isWaliKelasAktif();
+            $userRolesList = $authUser ? $authUser->getRolesList() : [];
+            $hasMultipleRoles = count($userRolesList) > 1;
             $currentActiveRole = $authUser?->activeRole();
-            $isOrangTuaUser = $authUser && $authUser->roles === 'orang tua';
+            $isOrangTuaUser = $authUser && $currentActiveRole === 'orang tua';
             $parentChildren = collect();
             $currentChild = null;
             if ($isOrangTuaUser) {
@@ -56,6 +57,54 @@
             }
         @endphp
 
+        {{-- Switcher Dropdown Role Akses (jika memiliki > 1 role) --}}
+        @if($hasMultipleRoles)
+        <li class="nav-item dropdown me-2">
+          <a class="nav-link dropdown-toggle btn btn-light btn-sm px-3 py-1 d-flex align-items-center gap-2 border shadow-sm rounded-pill fw-semibold text-dark" href="#" data-bs-toggle="dropdown" style="font-size: 0.85rem; background: #f8f9fa;">
+            <i class="bi bi-shield-check text-primary"></i>
+            <span>Peran: <strong class="text-capitalize">{{ $currentActiveRole ?: 'Pilih Peran' }}</strong></span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" style="border-radius: 12px; min-width: 230px;">
+            <li class="dropdown-header text-start py-1 px-3">
+              <span class="small fw-bold text-muted text-uppercase" style="font-size: 0.75rem;">Ganti Mode Peran :</span>
+            </li>
+            @foreach($userRolesList as $rItem)
+              @php
+                $isCurrent = $currentActiveRole === $rItem;
+                $slug = str_replace(' ', '-', $rItem);
+              @endphp
+              <li>
+                <form method="POST" action="{{ route('switch-role', $slug) }}" id="switchRoleNav_{{ $slug }}">
+                  @csrf
+                  <a class="dropdown-item d-flex justify-content-between align-items-center py-2 px-3 {{ $isCurrent ? 'active bg-primary text-white' : '' }}" 
+                     href="#" onclick="event.preventDefault(); document.getElementById('switchRoleNav_{{ $slug }}').submit();">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi {{ $rItem === 'admin' ? 'bi-shield-lock' : ($rItem === 'guru' ? 'bi-person-video3' : ($rItem === 'wali kelas' ? 'bi-easel' : ($rItem === 'kepala sekolah' ? 'bi-award' : ($rItem === 'orang tua' ? 'bi-people' : 'bi-person')))) }}"></i>
+                      <span class="fw-semibold text-capitalize">{{ $rItem }}</span>
+                    </div>
+                    @if($isCurrent)
+                      <i class="bi bi-check-circle-fill ms-2"></i>
+                    @endif
+                  </a>
+                </form>
+              </li>
+            @endforeach
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <form method="POST" action="{{ route('switch-role', 'reset') }}" id="resetRoleNavForm">
+                @csrf
+                <a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 text-secondary" href="#"
+                   onclick="event.preventDefault(); document.getElementById('resetRoleNavForm').submit();">
+                  <i class="bi bi-grid-fill"></i>
+                  <span>Menu Pilihan Peran</span>
+                </a>
+              </form>
+            </li>
+          </ul>
+        </li>
+        @endif
+
+        {{-- Dropdown Pilih Anak untuk Orang Tua --}}
         @if($isOrangTuaUser && $parentChildren->count() > 1)
         <li class="nav-item dropdown me-3">
           <a class="nav-link dropdown-toggle btn btn-light btn-sm px-3 py-1 d-flex align-items-center gap-2 border shadow-sm rounded-pill fw-semibold text-dark" href="#" data-bs-toggle="dropdown" style="font-size: 0.85rem; background: #f8f9fa;">
@@ -105,30 +154,29 @@
             </li>
             <li><hr class="dropdown-divider"></li>
 
-            @if ($canSwitchRole)
+            @if ($hasMultipleRoles)
+              @foreach($userRolesList as $rItem)
+                @if($rItem !== $currentActiveRole)
+                  @php $slug = str_replace(' ', '-', $rItem); @endphp
+                  <li>
+                    <form method="POST" action="{{ route('switch-role', $slug) }}" id="switchRoleProf_{{ $slug }}">
+                      @csrf
+                      <a class="dropdown-item d-flex align-items-center" href="#"
+                         onclick="event.preventDefault(); document.getElementById('switchRoleProf_{{ $slug }}').submit();">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>Beralih ke Peran <strong class="text-capitalize">{{ $rItem }}</strong></span>
+                      </a>
+                    </form>
+                  </li>
+                @endif
+              @endforeach
               <li>
-                <form method="POST" action="{{ route('switch-role', $currentActiveRole === 'wali kelas' ? 'guru' : 'wali-kelas') }}" id="switchRoleForm">
-                  @csrf
-                  <a class="dropdown-item d-flex align-items-center" href="#"
-                     onclick="event.preventDefault(); document.getElementById('switchRoleForm').submit();">
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span>
-                      @if ($currentActiveRole === 'wali kelas')
-                        Beralih ke Peran Guru
-                      @else
-                        Beralih ke Peran Wali Kelas
-                      @endif
-                    </span>
-                  </a>
-                </form>
-              </li>
-              <li>
-                <form method="POST" action="{{ route('switch-role', 'reset') }}" id="resetRoleForm">
+                <form method="POST" action="{{ route('switch-role', 'reset') }}" id="resetRoleProfForm">
                   @csrf
                   <a class="dropdown-item d-flex align-items-center text-secondary" href="#"
-                     onclick="event.preventDefault(); document.getElementById('resetRoleForm').submit();">
+                     onclick="event.preventDefault(); document.getElementById('resetRoleProfForm').submit();">
                     <i class="bi bi-grid-fill"></i>
-                    <span>Pilih Peran Login...</span>
+                    <span>Menu Pilihan Peran</span>
                   </a>
                 </form>
               </li>

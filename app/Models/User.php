@@ -24,6 +24,7 @@ class User extends Authenticatable
         'guru',
         'wali kelas',
         'kepala sekolah',
+        'pegawai',
         'siswa',
         'orang tua',
     ];
@@ -35,6 +36,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
         'roles',
@@ -77,6 +79,63 @@ class User extends Authenticatable
     }
 
     /**
+     * Mengambil daftar semua role yang dimiliki user dalam bentuk array lowercase.
+     */
+    public function getRolesList(): array
+    {
+        $raw = $this->attributes['roles'] ?? '';
+        $list = [];
+
+        if (is_array($raw)) {
+            $list = $raw;
+        } elseif (is_string($raw)) {
+            $trimmed = trim($raw);
+            if (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']')) {
+                $decoded = json_decode($trimmed, true);
+                if (is_array($decoded)) {
+                    $list = $decoded;
+                }
+            } else {
+                $list = array_map('trim', explode(',', $trimmed));
+            }
+        }
+
+        $list = array_map('strtolower', array_filter($list));
+
+        // Otomatis sertakan role 'wali kelas' jika guru ini memiliki tugas wali kelas aktif
+        if (in_array('guru', $list) && !in_array('wali kelas', $list) && $this->isWaliKelasAktif()) {
+            $list[] = 'wali kelas';
+        }
+
+        return array_values(array_unique($list));
+    }
+
+    /**
+     * Cek apakah user memiliki satu atau lebih role tertentu.
+     */
+    public function hasRole(string|array $checkRoles): bool
+    {
+        $userRoles = $this->getRolesList();
+        $checkList = is_array($checkRoles) ? $checkRoles : array_map('trim', explode(',', $checkRoles));
+
+        foreach ($checkList as $r) {
+            if (in_array(strtolower($r), $userRoles)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Cek apakah user memiliki lebih dari 1 role akses.
+     */
+    public function hasMultiRole(): bool
+    {
+        return count($this->getRolesList()) > 1;
+    }
+
+    /**
      * Cek apakah guru ini juga sedang ditugaskan sebagai wali kelas
      * pada tahun ajaran yang aktif.
      */
@@ -113,18 +172,41 @@ class User extends Authenticatable
     }
 
     /**
-     * Role yang sedang aktif dipakai untuk navigasi (bisa berbeda dari
-     * roles asli jika guru sedang beralih ke tampilan Wali Kelas).
+     * Role yang sedang aktif dipakai pada sesi saat ini.
      */
     public function activeRole(): string
     {
+        $rolesList = $this->getRolesList();
         $active = session('active_role');
 
-        if ($active && in_array($this->roles, ['guru', 'wali kelas']) && $this->isWaliKelasAktif()) {
+        if ($active && in_array($active, $rolesList)) {
             return $active;
         }
 
-        return $this->roles ?? '';
+        if (count($rolesList) === 1) {
+            return $rolesList[0];
+        }
+
+        return '';
+    }
+
+    /**
+     * Accessor untuk $user->roles untuk kompatibilitas kode yang langsung mengakses ->roles
+     */
+    public function getRolesAttribute($value): string
+    {
+        $active = session('active_role');
+        $rolesList = $this->getRolesList();
+
+        if ($active && in_array($active, $rolesList)) {
+            return $active;
+        }
+
+        if (count($rolesList) === 1) {
+            return $rolesList[0];
+        }
+
+        return $value ?? '';
     }
 
     /**

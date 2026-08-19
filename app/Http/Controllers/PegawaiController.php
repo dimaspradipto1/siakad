@@ -128,7 +128,30 @@ class PegawaiController extends Controller
         $jabatan = $request->jabatan ?: ucwords($role);
 
         // Update linked User Account
-        if ($pegawai->user) {
+        $user = $pegawai->user;
+        if (!$user && $pegawai->user_id) {
+            $user = User::find($pegawai->user_id);
+        }
+        if (!$user) {
+            $rawUsername = $pegawai->nip ?: 'pegawai_' . $pegawai->id;
+            $username = preg_replace('/[^A-Za-z0-9]/', '', strtolower($rawUsername));
+            $email = $request->email ?: ($username . '@gmail.com');
+            $user = User::where('username', $username)->orWhere('email', $email)->first();
+            if (!$user) {
+                $user = User::create([
+                    'name' => $request->nama_pegawai,
+                    'username' => $username,
+                    'email' => $email,
+                    'password' => Hash::make($request->filled('password') ? $request->password : 'password'),
+                    'roles' => $role,
+                    'is_active' => ($request->status ?? 'Aktif') === 'Aktif',
+                ]);
+            }
+            $pegawai->user_id = $user->id;
+            $pegawai->saveQuietly();
+        }
+
+        if ($user) {
             $userData = [
                 'name' => $request->nama_pegawai,
                 'roles' => $role,
@@ -137,10 +160,11 @@ class PegawaiController extends Controller
             if ($request->filled('email')) {
                 $userData['email'] = $request->email;
             }
+            // Hanya ganti password jika diisi password baru
             if ($request->filled('password')) {
                 $userData['password'] = Hash::make($request->password);
             }
-            $pegawai->user->update($userData);
+            $user->update($userData);
         }
 
         $pegawai->update([

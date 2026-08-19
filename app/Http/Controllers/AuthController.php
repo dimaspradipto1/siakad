@@ -42,16 +42,25 @@ class AuthController extends Controller
 
         if (Auth::attempt([$fieldType => $login, 'password' => $password], $remember)) {
             $request->session()->regenerate();
+            $request->session()->forget('active_role');
 
-            $nama = Auth::user()->name;
-            $role = ucwords(Auth::user()->roles);
+            $user = Auth::user();
+            $roles = $user->getRolesList();
 
-            toast('Selamat datang, ' . $nama . '! Anda login sebagai ' . $role . '.', 'success');
+            if (count($roles) === 1) {
+                $onlyRole = $roles[0];
+                $request->session()->put('active_role', $onlyRole);
+                toast('Selamat datang, ' . $user->name . '! Anda login sebagai ' . ucwords($onlyRole) . '.', 'success');
 
-            if (Auth::user()->roles === 'siswa') {
-                return redirect()->route('siswa.profile');
+                if ($onlyRole === 'siswa') {
+                    return redirect()->route('siswa.profile');
+                }
+                return redirect()->intended(route('dashboard'));
             }
-            return redirect()->intended(route('dashboard'));
+
+            // Jika memiliki lebih dari 1 role, arahkan ke dashboard untuk memilih mode peran
+            toast('Selamat datang, ' . $user->name . '! Silakan pilih peran yang ingin Anda gunakan.', 'info');
+            return redirect()->route('dashboard');
         }
 
         return back()
@@ -62,15 +71,13 @@ class AuthController extends Controller
     }
 
     /**
-     * Beralih tampilan menu antara Guru dan Wali Kelas untuk guru
-     * yang juga sedang ditugaskan sebagai wali kelas.
+     * Beralih tampilan menu / mode peran pengguna yang memiliki lebih dari satu role.
      */
     public function switchRole(Request $request, string $role)
     {
         $user = Auth::user();
-
-        if ($user->roles !== 'guru' || !$user->isWaliKelasAktif()) {
-            abort(403, 'Anda tidak memiliki akses untuk beralih peran.');
+        if (!$user) {
+            return redirect()->route('login');
         }
 
         if ($role === 'reset') {
@@ -78,10 +85,20 @@ class AuthController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $target = $role === 'wali-kelas' ? 'wali kelas' : 'guru';
+        $target = str_replace('-', ' ', strtolower(urldecode($role)));
+        $userRoles = $user->getRolesList();
+
+        if (!in_array($target, $userRoles)) {
+            abort(403, 'Anda tidak memiliki akses untuk peran: ' . ucwords($target));
+        }
+
         $request->session()->put('active_role', $target);
 
-        toast('Anda sekarang login sebagai ' . ucwords($target) . '.', 'success');
+        toast('Anda sekarang masuk sebagai ' . ucwords($target) . '.', 'success');
+
+        if ($target === 'siswa') {
+            return redirect()->route('siswa.profile');
+        }
 
         return redirect()->route('dashboard');
     }

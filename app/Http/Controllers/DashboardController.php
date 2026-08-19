@@ -20,28 +20,36 @@ class DashboardController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if ($user && $user->roles === 'siswa') {
-            return redirect()->route('siswa.profile');
+        if (!$user) {
+            return redirect()->route('login');
         }
 
-        // Dual role teacher check: if teacher has 2 roles and active_role session is NOT set yet
-        if ($user && $user->roles === 'guru' && $user->isWaliKelasAktif() && !session()->has('active_role')) {
+        $userRoles = $user->getRolesList();
+
+        // Multi-role check: jika pengguna memiliki lebih dari 1 role dan belum memilih peran aktif
+        if (count($userRoles) > 1 && !session()->has('active_role')) {
             $hideNav = true;
-            $isDualRoleSelection = true;
-
-            $guru = $user->pegawai?->guru ?? $user->guru;
-            $guruId = $guru ? $guru->id : 0;
-            $waliRecord = \App\Models\WaliKelas::where('guru_id', $guruId)
-                ->whereHas('tahunAjaran', fn($q) => $q->where('status', 'Aktif'))
-                ->first();
-
-            $kelasWaliNama = $waliRecord && $waliRecord->kelas ? $waliRecord->kelas->nama_kelas : 'Perwalian';
+            $isMultiRoleSelection = true;
             $activeRole = '';
 
-            return view('layouts.dashboard.index', compact('user', 'activeRole', 'hideNav', 'isDualRoleSelection', 'kelasWaliNama'));
+            $kelasWaliNama = null;
+            if (in_array('wali kelas', $userRoles)) {
+                $guru = $user->pegawai?->guru ?? $user->guru;
+                $guruId = $guru ? $guru->id : 0;
+                $waliRecord = \App\Models\WaliKelas::where('guru_id', $guruId)
+                    ->whereHas('tahunAjaran', fn($q) => $q->where('status', 'Aktif'))
+                    ->first();
+                $kelasWaliNama = $waliRecord && $waliRecord->kelas ? $waliRecord->kelas->nama_kelas : 'Perwalian';
+            }
+
+            return view('layouts.dashboard.index', compact('user', 'activeRole', 'hideNav', 'isMultiRoleSelection', 'userRoles', 'kelasWaliNama'));
         }
 
-        $activeRole = $user?->activeRole() ?? '';
+        $activeRole = $user->activeRole();
+
+        if ($activeRole === 'siswa') {
+            return redirect()->route('siswa.profile');
+        }
 
         if ($user && $activeRole === 'kepala sekolah') {
             $totalPegawai = \App\Models\Pegawai::count();

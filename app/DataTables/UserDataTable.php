@@ -27,11 +27,16 @@ class UserDataTable extends DataTable
                     'kepala sekolah' => 'dark',
                     'guru'           => 'primary',
                     'wali kelas'     => 'info',
+                    'pegawai'        => 'secondary',
                     'siswa'          => 'success',
                     'orang tua'      => 'warning',
                 ];
-                $color = $roleColors[$user->roles] ?? 'secondary';
-                return '<span class="badge bg-' . $color . ' text-capitalize">' . e($user->roles) . '</span>';
+                $badges = [];
+                foreach ($user->getRolesList() as $r) {
+                    $color = $roleColors[$r] ?? 'secondary';
+                    $badges[] = '<span class="badge bg-' . $color . ' text-capitalize me-1">' . e($r) . '</span>';
+                }
+                return implode('', $badges);
             })
             ->editColumn('is_active', function($user) {
                 if ($user->is_active) {

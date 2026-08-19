@@ -71,27 +71,36 @@
                                 </div>
                             </div>
 
-                            {{-- Role --}}
+                            {{-- Role (Bisa Lebih Dari Satu) --}}
                             <div class="mb-3">
-                                <label for="roles" class="form-label fw-semibold">
-                                    Role <span class="text-danger">*</span>
+                                <label class="form-label fw-semibold d-block">
+                                    Role Akses <span class="text-danger">*</span>
+                                    <small class="text-muted fw-normal d-block">Pilih satu atau beberapa role untuk pengguna ini:</small>
                                 </label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
-                                    <select id="roles" name="roles"
-                                        class="form-select @error('roles') is-invalid @enderror">
-                                        <option value="">-- Pilih Role --</option>
-                                        @foreach ($roles as $role)
-                                            <option value="{{ $role }}"
-                                                {{ old('roles', $user->roles) === $role ? 'selected' : '' }}>
-                                                {{ ucwords($role) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('roles')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                <div class="row g-2 p-3 bg-light rounded-3 border @error('roles') border-danger @enderror">
+                                    @php
+                                        $userRoles = $user->getRolesList();
+                                    @endphp
+                                    @foreach ($roles as $role)
+                                        @php
+                                            $oldRoles = old('roles', $userRoles);
+                                            $isChecked = is_array($oldRoles) ? in_array($role, $oldRoles) : ($oldRoles === $role);
+                                        @endphp
+                                        <div class="col-sm-6 col-md-4">
+                                            <div class="form-check p-2 bg-white rounded border d-flex align-items-center gap-2">
+                                                <input class="form-check-input ms-0 me-2" type="checkbox" name="roles[]" 
+                                                       id="role_{{ Str::slug($role) }}" value="{{ $role }}"
+                                                       {{ $isChecked ? 'checked' : '' }}>
+                                                <label class="form-check-label fw-medium text-dark cursor-pointer text-capitalize" for="role_{{ Str::slug($role) }}">
+                                                    {{ $role }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
+                                @error('roles')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             {{-- Password (opsional) --}}

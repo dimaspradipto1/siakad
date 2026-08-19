@@ -38,11 +38,14 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
+        $rolesInput = $request->input('roles');
+        $rolesStr = is_array($rolesInput) ? implode(',', array_filter($rolesInput)) : ($rolesInput ?: 'pegawai');
+
         User::create([
             'name'      => $validated['name'],
             'email'     => $validated['email'],
             'password'  => Hash::make($validated['password']),
-            'roles'     => $validated['roles'],
+            'roles'     => $rolesStr,
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -72,10 +75,13 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
+        $rolesInput = $request->input('roles');
+        $rolesStr = is_array($rolesInput) ? implode(',', array_filter($rolesInput)) : ($rolesInput ?: 'pegawai');
+
         $data = [
             'name'      => $validated['name'],
             'email'     => $validated['email'],
-            'roles'     => $validated['roles'],
+            'roles'     => $rolesStr,
             'is_active' => $request->boolean('is_active'),
         ];
 
