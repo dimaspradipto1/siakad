@@ -103,42 +103,64 @@ class DashboardController extends Controller
             $activeTa = \App\Models\TahunAjaran::where('status', 'Aktif')->first();
             $activeTaId = $activeTa ? $activeTa->id : null;
 
-            $waliRecord = \App\Models\WaliKelas::where('guru_id', $guruId)
-                ->when($activeTaId, fn($q) => $q->where('tahun_ajaran_id', $activeTaId))
-                ->with('kelas')
-                ->first();
-            $kelasWaliNama = $waliRecord && $waliRecord->kelas ? $waliRecord->kelas->nama_kelas : null;
+            if ($activeRole === 'guru') {
+                // Data khusus Guru Pengajar (tidak digabung dengan kelas perwalian)
+                $mapelQuery = \App\Models\MataPelajaran::where('guru_id', $guruId)
+                    ->when($activeTaId, function($q) use ($activeTaId) {
+                        $q->where('tahun_ajaran_id', $activeTaId)->orWhereNull('tahun_ajaran_id');
+                    })
+                    ->with('kelas');
 
-            $mapelQuery = \App\Models\MataPelajaran::where('guru_id', $guruId)
-                ->when($activeTaId, function($q) use ($activeTaId) {
-                    $q->where('tahun_ajaran_id', $activeTaId)->orWhereNull('tahun_ajaran_id');
-                })
-                ->with('kelas');
+                $guruMapels = $mapelQuery->get();
+                $kelasDiajarList = $guruMapels->pluck('kelas.nama_kelas')->filter()->unique();
 
-            $guruMapels = $mapelQuery->get();
+                $guruKelasDisplay = $kelasDiajarList->isNotEmpty() ? $kelasDiajarList->implode(', ') : '—';
+                $guruKelasCount = $kelasDiajarList->count();
 
-            $kelasDiajarList = $guruMapels->pluck('kelas.nama_kelas')->filter()->unique();
-            if ($kelasWaliNama && !$kelasDiajarList->contains($kelasWaliNama)) {
-                $kelasDiajarList->prepend($kelasWaliNama);
+                $guruMapelNames = $guruMapels->pluck('nama_mata_pelajaran')->filter()->unique();
+                $guruMapelDisplay = $guruMapelNames->isNotEmpty() ? $guruMapelNames->implode(', ') : '—';
+                $guruMapelCount = $guruMapelNames->count();
+
+                return view('layouts.dashboard.index', compact(
+                    'user', 'activeRole', 'guruKelasDisplay', 'guruKelasCount', 'guruMapelDisplay', 'guruMapelCount'
+                ));
             }
 
-            $guruKelasDisplay = $kelasDiajarList->isNotEmpty() ? $kelasDiajarList->implode(', ') : ($kelasWaliNama ? 'Kelas ' . $kelasWaliNama : '—');
-            $guruKelasCount = $kelasDiajarList->count();
+            if ($activeRole === 'wali kelas') {
+                // Data khusus Wali Kelas (kelas perwalian & jumlah siswa)
+                $waliRecord = \App\Models\WaliKelas::where('guru_id', $guruId)
+                    ->when($activeTaId, fn($q) => $q->where('tahun_ajaran_id', $activeTaId))
+                    ->with('kelas')
+                    ->first();
 
-            $guruMapelNames = $guruMapels->pluck('nama_mata_pelajaran')->filter()->unique();
-            $guruMapelDisplay = $guruMapelNames->isNotEmpty() ? $guruMapelNames->implode(', ') : '—';
-            $guruMapelCount = $guruMapelNames->count();
+                $kelasWaliNama = $waliRecord && $waliRecord->kelas ? $waliRecord->kelas->nama_kelas : null;
+                $waliKelasDisplay = $kelasWaliNama ? 'Kelas ' . $kelasWaliNama : '—';
 
-            return view('layouts.dashboard.index', compact(
-                'user', 'activeRole', 'guruKelasDisplay', 'guruKelasCount', 'guruMapelDisplay', 'guruMapelCount', 'kelasWaliNama'
-            ));
+                $siswaPerwalianCount = 0;
+                if ($waliRecord && $waliRecord->kelas_id) {
+                    $siswaPerwalianCount = \App\Models\PembagianKelas::where('kelas_id', $waliRecord->kelas_id)
+                        ->when($activeTaId, fn($q) => $q->where('tahun_ajaran_id', $activeTaId))
+                        ->count();
+                    if ($siswaPerwalianCount === 0) {
+                        $siswaPerwalianCount = \App\Models\Siswa::where('kelas_id', $waliRecord->kelas_id)->count();
+                    }
+                }
+
+                return view('layouts.dashboard.index', compact(
+                    'user', 'activeRole', 'waliKelasDisplay', 'kelasWaliNama', 'siswaPerwalianCount'
+                ));
+            }
         }
 
         if ($user && $activeRole === 'admin') {
             $totalSiswa = \App\Models\Siswa::count();
             $totalGuru = \App\Models\Guru::count();
+            $totalWaliKelas = \App\Models\WaliKelas::whereHas('tahunAjaran', fn($q) => $q->where('status', 'Aktif'))->count();
+            if ($totalWaliKelas === 0) {
+                $totalWaliKelas = \App\Models\WaliKelas::count();
+            }
             $totalKelas = \App\Models\Kelas::count();
-            return view('layouts.dashboard.index', compact('user', 'activeRole', 'totalSiswa', 'totalGuru', 'totalKelas'));
+            return view('layouts.dashboard.index', compact('user', 'activeRole', 'totalSiswa', 'totalGuru', 'totalWaliKelas', 'totalKelas'));
         }
 
         if ($user && $activeRole === 'orang tua') {

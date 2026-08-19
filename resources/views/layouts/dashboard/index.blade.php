@@ -333,9 +333,6 @@
                                             <p class="mb-0" style="opacity:.8;font-size:13px;">
                                                 <i class="bi bi-shield-check me-1"></i>
                                                 Role: <strong class="text-capitalize">{{ $activeRole ?: '-' }}</strong>
-                                                @if (($user->roles ?? '') === 'guru' && $user->isWaliKelasAktif())
-                                                    <span class="badge bg-light text-dark ms-1" style="font-size:11px;">Guru & Wali Kelas</span>
-                                                @endif
                                                 &nbsp;·&nbsp; SIAKAD SD Negeri 007 Sekupang
                                             </p>
                                         </div>
@@ -345,8 +342,8 @@
                         </div>
 
                         <!-- Statistik Cards -->
-                        @if (in_array($activeRole, ['admin', 'kepala sekolah']))
-                            <div class="col-xxl-4 col-md-6">
+                        @if ($activeRole === 'admin')
+                            <div class="col-xxl-3 col-md-6">
                                 <div class="card info-card" style="border-left: 4px solid #4154f1;">
                                     <div class="card-body">
                                         <h5 class="card-title">Total Siswa</h5>
@@ -364,7 +361,7 @@
                                 </div>
                             </div><!-- End Siswa Card -->
 
-                            <div class="col-xxl-4 col-md-6">
+                            <div class="col-xxl-3 col-md-6">
                                 <div class="card info-card" style="border-left: 4px solid #2eca6a;">
                                     <div class="card-body">
                                         <h5 class="card-title">Total Guru</h5>
@@ -375,14 +372,32 @@
                                             </div>
                                             <div class="ps-3">
                                                 <h6>{{ $totalGuru ?? '—' }}</h6>
-                                                <span class="text-muted small">Data dari database</span>
+                                                <span class="text-muted small">Guru pengajar</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div><!-- End Guru Card -->
 
-                            <div class="col-xxl-4 col-md-6">
+                            <div class="col-xxl-3 col-md-6">
+                                <div class="card info-card" style="border-left: 4px solid #0dcaf0;">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Total Wali Kelas</h5>
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center"
+                                                style="background:#e0f7fa;">
+                                                <i class="bi bi-person-workspace" style="color:#0dcaf0;"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6>{{ $totalWaliKelas ?? '—' }}</h6>
+                                                <span class="text-muted small">Wali kelas aktif</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div><!-- End Wali Kelas Card -->
+
+                            <div class="col-xxl-3 col-md-6">
                                 <div class="card info-card" style="border-left: 4px solid #ff771d;">
                                     <div class="card-body">
                                         <h5 class="card-title">Total Kelas</h5>
@@ -393,7 +408,7 @@
                                             </div>
                                             <div class="ps-3">
                                                 <h6>{{ $totalKelas ?? '—' }}</h6>
-                                                <span class="text-muted small">Data dari database</span>
+                                                <span class="text-muted small">Data rombel</span>
                                             </div>
                                         </div>
                                     </div>
@@ -401,11 +416,11 @@
                             </div><!-- End Kelas Card -->
                         @endif
 
-                        @if (in_array($activeRole, ['guru', 'wali kelas']))
+                        @if ($activeRole === 'guru')
                             <div class="col-xxl-6 col-md-6">
                                 <div class="card info-card" style="border-left: 4px solid #4154f1;">
                                     <div class="card-body">
-                                        <h5 class="card-title">Kelas Saya</h5>
+                                        <h5 class="card-title">Kelas yang Diampu</h5>
                                         <div class="d-flex align-items-center">
                                             <div class="card-icon rounded-circle d-flex align-items-center justify-content-center"
                                                 style="background:#e8eafd;">
@@ -414,11 +429,7 @@
                                             <div class="ps-3">
                                                 <h6 style="font-size: 1.1rem;">{{ $guruKelasDisplay ?? '—' }}</h6>
                                                 <span class="text-muted small">
-                                                    @if(!empty($kelasWaliNama))
-                                                        Wali Kelas {{ $kelasWaliNama }} ({{ $guruKelasCount ?? 1 }} Kelas)
-                                                    @else
-                                                        {{ ($guruKelasCount ?? 0) > 0 ? ($guruKelasCount . ' Kelas Diampu') : 'Kelas yang diampu' }}
-                                                    @endif
+                                                    {{ ($guruKelasCount ?? 0) > 0 ? ($guruKelasCount . ' Kelas Diampu') : 'Kelas yang diampu' }}
                                                 </span>
                                             </div>
                                         </div>
@@ -429,7 +440,7 @@
                             <div class="col-xxl-6 col-md-6">
                                 <div class="card info-card" style="border-left: 4px solid #2eca6a;">
                                     <div class="card-body">
-                                        <h5 class="card-title">Mata Pelajaran</h5>
+                                        <h5 class="card-title">Mata Pelajaran yang Diajar</h5>
                                         <div class="d-flex align-items-center">
                                             <div class="card-icon rounded-circle d-flex align-items-center justify-content-center"
                                                 style="background:#e0f8ec;">
@@ -438,6 +449,46 @@
                                             <div class="ps-3">
                                                 <h6 style="font-size: 1.1rem;">{{ $guruMapelDisplay ?? '—' }}</h6>
                                                 <span class="text-muted small">{{ ($guruMapelCount ?? 0) > 0 ? ($guruMapelCount . ' Mapel Aktif') : 'Mapel yang diajarkan' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if ($activeRole === 'wali kelas')
+                            <div class="col-xxl-6 col-md-6">
+                                <div class="card info-card" style="border-left: 4px solid #4154f1;">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Kelas Perwalian</h5>
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center"
+                                                style="background:#e8eafd;">
+                                                <i class="bi bi-easel" style="color:#4154f1;"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6 style="font-size: 1.1rem;">{{ $waliKelasDisplay ?? '—' }}</h6>
+                                                <span class="text-muted small">
+                                                    {{ !empty($kelasWaliNama) ? 'Wali Kelas ' . $kelasWaliNama : 'Belum ditugaskan kelas' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-xxl-6 col-md-6">
+                                <div class="card info-card" style="border-left: 4px solid #0dcaf0;">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Jumlah Siswa Perwalian</h5>
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center"
+                                                style="background:#e0f7fa;">
+                                                <i class="bi bi-people-fill" style="color:#0dcaf0;"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6 style="font-size: 1.1rem;">{{ $siswaPerwalianCount ?? 0 }} Siswa</h6>
+                                                <span class="text-muted small">{{ !empty($kelasWaliNama) ? 'Siswa aktif di Kelas ' . $kelasWaliNama : 'Data siswa' }}</span>
                                             </div>
                                         </div>
                                     </div>
