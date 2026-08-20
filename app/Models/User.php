@@ -102,11 +102,6 @@ class User extends Authenticatable
 
         $list = array_map('strtolower', array_filter($list));
 
-        // Otomatis sertakan role 'wali kelas' jika guru ini memiliki tugas wali kelas aktif
-        if (in_array('guru', $list) && !in_array('wali kelas', $list) && $this->isWaliKelasAktif()) {
-            $list[] = 'wali kelas';
-        }
-
         return array_values(array_unique($list));
     }
 

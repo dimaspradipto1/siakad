@@ -176,11 +176,23 @@ class DashboardController extends Controller
 
         if ($user && $activeRole === 'admin') {
             $totalSiswa = \App\Models\Siswa::count();
-            $totalGuru = \App\Models\Guru::count();
-            $totalWaliKelas = \App\Models\WaliKelas::whereHas('tahunAjaran', fn($q) => $q->where('status', 'Aktif'))->count();
-            if ($totalWaliKelas === 0) {
-                $totalWaliKelas = \App\Models\WaliKelas::count();
-            }
+
+            // Hitung total Guru dan Wali Kelas langsung tersinkronisasi dari Data Pegawai berdasarkan Role
+            $pegawais = \App\Models\Pegawai::with('user')->get();
+            $totalGuru = $pegawais->filter(function ($p) {
+                if ($p->user) {
+                    return in_array('guru', $p->user->getRolesList());
+                }
+                return str_contains(strtolower($p->jabatan ?? ''), 'guru');
+            })->count();
+
+            $totalWaliKelas = $pegawais->filter(function ($p) {
+                if ($p->user) {
+                    return in_array('wali kelas', $p->user->getRolesList());
+                }
+                return str_contains(strtolower($p->jabatan ?? ''), 'wali');
+            })->count();
+
             $totalKelas = \App\Models\Kelas::count();
             return view('layouts.dashboard.index', compact('user', 'activeRole', 'totalSiswa', 'totalGuru', 'totalWaliKelas', 'totalKelas'));
         }
