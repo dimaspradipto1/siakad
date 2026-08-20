@@ -54,12 +54,22 @@ class DashboardController extends Controller
         if ($user && $activeRole === 'kepala sekolah') {
             $totalPegawai = \App\Models\Pegawai::count();
 
-            // Dynamic pegawai breakdown by role / jabatan
-            $pegawaiRoleCounts = \App\Models\Pegawai::with('user')->get()
-                ->groupBy(function($p) {
-                    return $p->user?->roles ? ucwords($p->user->roles) : ($p->jabatan ?? 'Pegawai');
-                })
-                ->map(fn($group) => $group->count());
+            // Dynamic pegawai breakdown by role / jabatan (mendukung multi-role, masing-masing dihitung tepat)
+            $roleMap = [];
+            $pegawais = \App\Models\Pegawai::with(['user', 'guru'])->get();
+            foreach ($pegawais as $p) {
+                if ($p->user) {
+                    $roles = $p->user->getRolesList();
+                    foreach ($roles as $r) {
+                        $roleName = ucwords($r);
+                        $roleMap[$roleName] = ($roleMap[$roleName] ?? 0) + 1;
+                    }
+                } else {
+                    $roleName = $p->jabatan ? ucwords($p->jabatan) : 'Pegawai';
+                    $roleMap[$roleName] = ($roleMap[$roleName] ?? 0) + 1;
+                }
+            }
+            $pegawaiRoleCounts = collect($roleMap);
 
             $totalSiswa = \App\Models\Siswa::count();
             $siswaCountByTingkat = [];

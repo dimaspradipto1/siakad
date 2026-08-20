@@ -31,7 +31,11 @@ class PegawaiDataTable extends DataTable
                 return $pegawai->status ?? 'Aktif';
             })
             ->addColumn('role', function ($pegawai) {
-                return $pegawai->user ? ucwords($pegawai->user->roles) : ucwords($pegawai->jabatan ?? 'Pegawai');
+                if ($pegawai->user) {
+                    $roles = $pegawai->user->getRolesList();
+                    return implode(', ', array_map('ucwords', $roles));
+                }
+                return ucwords($pegawai->jabatan ?? 'Pegawai');
             })
             ->addColumn('action', function ($pegawai) {
                 if (auth()->user()?->roles !== 'admin') return '';
