@@ -112,20 +112,24 @@ class DashboardController extends Controller
             $activeTaId = $activeTa ? $activeTa->id : null;
 
             if ($activeRole === 'guru') {
-                // Data khusus Guru Pengajar (tidak digabung dengan kelas perwalian)
+                // Data khusus Guru Pengajar (merujuk ke mata pelajaran aktif guru pada tahun ajaran aktif)
                 $mapelQuery = \App\Models\MataPelajaran::where('guru_id', $guruId)
-                    ->when($activeTaId, function($q) use ($activeTaId) {
-                        $q->where('tahun_ajaran_id', $activeTaId)->orWhereNull('tahun_ajaran_id');
+                    ->whereNotNull('kelas_id')
+                    ->where(function ($q) {
+                        $q->where('status', 'Aktif')->orWhereNull('status');
+                    })
+                    ->when($activeTaId, function ($q) use ($activeTaId) {
+                        $q->where('tahun_ajaran_id', $activeTaId);
                     })
                     ->with('kelas');
 
                 $guruMapels = $mapelQuery->get();
-                $kelasDiajarList = $guruMapels->pluck('kelas.nama_kelas')->filter()->unique();
+                $kelasDiajarList = $guruMapels->pluck('kelas.nama_kelas')->filter()->unique()->values();
 
                 $guruKelasDisplay = $kelasDiajarList->isNotEmpty() ? $kelasDiajarList->implode(', ') : '—';
                 $guruKelasCount = $kelasDiajarList->count();
 
-                $guruMapelNames = $guruMapels->pluck('nama_mata_pelajaran')->filter()->unique();
+                $guruMapelNames = $guruMapels->pluck('nama_mata_pelajaran')->filter()->unique()->values();
                 $guruMapelDisplay = $guruMapelNames->isNotEmpty() ? $guruMapelNames->implode(', ') : '—';
                 $guruMapelCount = $guruMapelNames->count();
 
