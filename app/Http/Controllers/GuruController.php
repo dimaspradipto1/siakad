@@ -25,9 +25,15 @@ class GuruController extends Controller
      */
     public function create()
     {
-        // Hanya menampilkan pegawai dengan role Guru yang belum terdaftar di tabel guru
-        $pegawais = Pegawai::whereHas('user', function ($u) {
-            $u->whereRaw('LOWER(roles) = ?', ['guru']);
+        // Menampilkan pegawai dengan role Guru atau Wali Kelas yang belum terdaftar di tabel guru
+        $pegawais = Pegawai::where(function ($query) {
+            $query->whereHas('user', function ($u) {
+                $u->where(function ($q) {
+                    $q->whereRaw('LOWER(roles) LIKE ?', ['%guru%'])
+                      ->orWhereRaw('LOWER(roles) LIKE ?', ['%wali kelas%']);
+                });
+            })->orWhereRaw('LOWER(jabatan) LIKE ?', ['%guru%'])
+              ->orWhereRaw('LOWER(jabatan) LIKE ?', ['%wali kelas%']);
         })
         ->whereDoesntHave('guru')
         ->orderBy('nama_pegawai')
@@ -69,9 +75,15 @@ class GuruController extends Controller
      */
     public function edit(Guru $guru)
     {
-        // Ambil pegawai ber-role Guru yang belum menjadi guru, ATAU yang sedang di-edit saat ini
-        $pegawais = Pegawai::whereHas('user', function ($u) {
-            $u->whereRaw('LOWER(roles) = ?', ['guru']);
+        // Ambil pegawai ber-role Guru/Wali Kelas yang belum menjadi guru, ATAU yang sedang di-edit saat ini
+        $pegawais = Pegawai::where(function ($query) {
+            $query->whereHas('user', function ($u) {
+                $u->where(function ($q) {
+                    $q->whereRaw('LOWER(roles) LIKE ?', ['%guru%'])
+                      ->orWhereRaw('LOWER(roles) LIKE ?', ['%wali kelas%']);
+                });
+            })->orWhereRaw('LOWER(jabatan) LIKE ?', ['%guru%'])
+              ->orWhereRaw('LOWER(jabatan) LIKE ?', ['%wali kelas%']);
         })
         ->where(function ($q) use ($guru) {
             $q->whereDoesntHave('guru')

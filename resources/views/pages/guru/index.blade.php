@@ -20,7 +20,6 @@
                             <h5 class="card-title mb-0">Daftar Guru</h5>
                             @if(auth()->user()->roles === 'admin')
                             <div class="d-flex gap-2">
-                                @if(auth()->user()->roles !== 'admin')
                                 <a href="{{ route('guru.template') }}" class="btn btn-secondary btn-sm" title="Download Template Import">
                                     <i class="bi bi-download"></i> Template
                                 </a>
@@ -30,7 +29,9 @@
                                 <a href="{{ route('guru.export') }}" class="btn btn-info btn-sm text-white" title="Export Data">
                                     <i class="bi bi-file-earmark-arrow-down"></i> Export
                                 </a>
-                                @endif
+                                <a href="{{ route('guru.create') }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-circle-fill"></i> Tambah Guru
+                                </a>
                             </div>
                             @endif
                         </div>

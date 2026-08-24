@@ -20,9 +20,18 @@ class WaliKelasController extends Controller
 
     public function create()
     {
-        $gurus = Guru::whereHas('pegawai.user', function ($u) {
-            $u->whereRaw('LOWER(roles) = ?', ['wali kelas']);
+        $gurus = Guru::where(function ($query) {
+            $query->whereHas('pegawai.user', function ($u) {
+                $u->where(function ($q) {
+                    $q->whereRaw('LOWER(roles) LIKE ?', ['%guru%'])
+                      ->orWhereRaw('LOWER(roles) LIKE ?', ['%wali kelas%']);
+                });
+            })->orWhereHas('pegawai', function ($p) {
+                $p->whereRaw('LOWER(jabatan) LIKE ?', ['%guru%'])
+                  ->orWhereRaw('LOWER(jabatan) LIKE ?', ['%wali kelas%']);
+            });
         })->with('pegawai')->get();
+
         $kelas = Kelas::all();
         // Hanya ambil tahun ajaran yang aktif untuk default form, tapi tetap passing semua jika diperlukan
         $tahunAjarans = TahunAjaran::orderBy('tahun_mulai', 'desc')->get();
@@ -54,9 +63,18 @@ class WaliKelasController extends Controller
 
     public function edit(WaliKelas $walikela)
     {
-        $gurus = Guru::whereHas('pegawai.user', function ($u) {
-            $u->whereRaw('LOWER(roles) = ?', ['wali kelas']);
+        $gurus = Guru::where(function ($query) {
+            $query->whereHas('pegawai.user', function ($u) {
+                $u->where(function ($q) {
+                    $q->whereRaw('LOWER(roles) LIKE ?', ['%guru%'])
+                      ->orWhereRaw('LOWER(roles) LIKE ?', ['%wali kelas%']);
+                });
+            })->orWhereHas('pegawai', function ($p) {
+                $p->whereRaw('LOWER(jabatan) LIKE ?', ['%guru%'])
+                  ->orWhereRaw('LOWER(jabatan) LIKE ?', ['%wali kelas%']);
+            });
         })->orWhere('id', $walikela->guru_id)->with('pegawai')->get();
+
         $kelas = Kelas::all();
         $tahunAjarans = TahunAjaran::orderBy('tahun_mulai', 'desc')->get();
 

@@ -109,8 +109,9 @@
                                         <th style="width: 120px;">NISN</th>
                                         <th class="text-start" style="min-width: 180px;">Nama Siswa</th>
                                         @foreach($dates as $d)
-                                            <th style="width: 45px;" title="{{ \Carbon\Carbon::parse($d)->translatedFormat('d F Y') }}">
-                                                {{ \Carbon\Carbon::parse($d)->format('d') }}
+                                            <th style="min-width: 48px;" title="{{ \Carbon\Carbon::parse($d)->translatedFormat('d F Y') }}">
+                                                <div class="fw-bold">{{ \Carbon\Carbon::parse($d)->format('d') }}</div>
+                                                <div class="text-secondary fw-normal" style="font-size: 0.72rem; line-height: 1;">{{ \Carbon\Carbon::parse($d)->locale('id')->isoFormat('MMM') }}</div>
                                             </th>
                                         @endforeach
                                     </tr>

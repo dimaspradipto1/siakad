@@ -24,12 +24,30 @@ class GuruDataTable extends DataTable
             ->addColumn('status', function ($guru) {
                 return $guru->status ?? 'Aktif';
             })
+            ->addColumn('action', function ($guru) {
+                if (auth()->user()?->roles !== 'admin') return '';
+                return '
+                <div class="d-flex gap-1 justify-content-center">
+                    <a href="' . route('guru.edit', $guru->id) . '" class="btn btn-warning btn-sm" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <form action="' . route('guru.destroy', $guru->id) . '" method="POST" class="d-inline">
+                        ' . csrf_field() . '
+                        ' . method_field('DELETE') . '
+                        <button type="button" class="btn btn-danger btn-sm btn-hapus" data-nama="' . e($guru->nama_pegawai ?? $guru->nip_guru) . '" title="Hapus">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+                ';
+            })
             ->filterColumn('nama_pegawai', function ($query, $keyword) {
                 $query->whereRaw('LOWER(pegawais.nama_pegawai) LIKE ?', ['%' . strtolower($keyword) . '%']);
             })
             ->filterColumn('jenis_kelamin', function ($query, $keyword) {
                 $query->whereRaw('LOWER(pegawais.jenis_kelamin) LIKE ?', ['%' . strtolower($keyword) . '%']);
             })
+            ->rawColumns(['action'])
             ->setRowId('id');
     }
 
@@ -46,8 +64,13 @@ class GuruDataTable extends DataTable
                 'pegawais.status as status'
             ])
             ->join('pegawais', 'gurus.pegawai_id', '=', 'pegawais.id')
-            ->join('users', 'pegawais.user_id', '=', 'users.id')
-            ->whereRaw('LOWER(users.roles) = ?', ['guru']);
+            ->leftJoin('users', 'pegawais.user_id', '=', 'users.id')
+            ->where(function($q) {
+                $q->whereRaw('LOWER(users.roles) LIKE ?', ['%guru%'])
+                  ->orWhereRaw('LOWER(users.roles) LIKE ?', ['%wali kelas%'])
+                  ->orWhereRaw('LOWER(pegawais.jabatan) LIKE ?', ['%guru%'])
+                  ->orWhereNull('pegawais.user_id');
+            });
     }
 
     /**
@@ -76,7 +99,7 @@ class GuruDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::make('DT_RowIndex')->title('No')->searchable(false)->orderable(false)->addClass('text-center'),
             Column::make('nip_guru')->title('NIP Guru'),
             Column::make('nama_pegawai')->title('Nama Guru'),
@@ -85,6 +108,16 @@ class GuruDataTable extends DataTable
             Column::make('pendidikan_terakhir')->title('Pendidikan Terakhir'),
             Column::make('status')->title('Status')->searchable(false)->orderable(false),
         ];
+
+        if (auth()->user()?->roles === 'admin') {
+            $columns[] = Column::computed('action')
+                  ->exportable(false)
+                  ->printable(false)
+                  ->width(100)
+                  ->addClass('text-center');
+        }
+
+        return $columns;
     }
 
     /**

@@ -629,7 +629,7 @@ class KehadiranController extends Controller
         $selectedKelas = $request->get('kelas_id');
         $selectedMapel = $request->get('mata_pelajaran_id');
 
-        $ta = TahunAjaran::find($selectedTa);
+        $tahunAjaran = TahunAjaran::find($selectedTa);
         $semester = Semester::query()
             ->where('tahun_ajaran_id', $selectedTa)
             ->where('nama_semester', $selectedSemName)
