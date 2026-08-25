@@ -21,7 +21,7 @@
                         <h5 class="card-title text-dark fw-bold mb-4 p-0">Form Rekap Kehadiran Siswa</h5>
 
                         <form action="{{ route('kehadiran.rekap') }}" method="GET" class="row g-4">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="tahun_ajaran_id" class="form-label fw-semibold text-dark">Tahun Ajaran</label>
                                 <select name="tahun_ajaran_id" id="tahun_ajaran_id" class="form-select py-2" style="border-radius: 8px;" required>
                                     <option value="" disabled selected></option>
@@ -33,7 +33,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="semester_name" class="form-label fw-semibold text-dark">Semester</label>
                                 <select name="semester_name" id="semester_name" class="form-select py-2" style="border-radius: 8px;" required>
                                     <option value="" disabled {{ empty($selectedSemName) ? 'selected' : '' }}>-- Pilih Semester --</option>
@@ -45,6 +45,25 @@
                                     @foreach($semList as $semName)
                                         <option value="{{ $semName }}" {{ $selectedSemName == $semName ? 'selected' : '' }}>
                                             {{ $semName }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="bulan" class="form-label fw-semibold text-dark">Bulan</label>
+                                <select name="bulan" id="bulan" class="form-select py-2" style="border-radius: 8px;">
+                                    <option value="">Semua Bulan</option>
+                                    @php
+                                        $daftarBulan = [
+                                            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                                            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                                            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                                        ];
+                                    @endphp
+                                    @foreach($daftarBulan as $num => $nama)
+                                        <option value="{{ $num }}" {{ (string)$selectedBulan === (string)$num ? 'selected' : '' }}>
+                                            {{ $nama }}
                                         </option>
                                     @endforeach
                                 </select>

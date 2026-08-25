@@ -154,9 +154,14 @@
             <td>Tahun Ajaran</td>
             <td>:</td>
             <td class="fw-bold">{{ $tahunAjaran->nama_tahun_ajaran ?? '-' }}</td>
+            <td>Bulan</td>
+            <td>:</td>
+            <td class="fw-bold">{{ $selectedBulanName ?? 'Semua Bulan' }}</td>
+        </tr>
+        <tr>
             <td>Mata Pelajaran</td>
             <td>:</td>
-            <td class="fw-bold">{{ $mapelModel->nama_mata_pelajaran ?? '-' }}</td>
+            <td class="fw-bold" colspan="4">{{ $mapelModel->nama_mata_pelajaran ?? '-' }}</td>
         </tr>
     </table>
 

@@ -563,6 +563,8 @@ class KehadiranController extends Controller
             ? MataPelajaran::where('nama_mata_pelajaran', $selectedMapelModel->nama_mata_pelajaran)->pluck('id')->toArray()
             : ($selectedMapel ? [$selectedMapel] : []);
 
+        $selectedBulan = $request->get('bulan');
+
         $students = [];
         $dates = [];
         $attendanceMatrix = [];
@@ -580,10 +582,15 @@ class KehadiranController extends Controller
             }
 
             // Distinct dates where attendance was recorded
-            $dates = Kehadiran::query()
+            $datesQuery = Kehadiran::query()
                 ->whereIn('mata_pelajaran_id', $matchingMapelIds)
-                ->whereIn('siswa_id', $siswaIds)
-                ->select('tanggal')
+                ->whereIn('siswa_id', $siswaIds);
+
+            if (!empty($selectedBulan)) {
+                $datesQuery->whereMonth('tanggal', $selectedBulan);
+            }
+
+            $dates = $datesQuery->select('tanggal')
                 ->distinct()
                 ->orderBy('tanggal', 'asc')
                 ->pluck('tanggal')
@@ -607,7 +614,7 @@ class KehadiranController extends Controller
 
         return view('pages.kehadiran.rekap', compact(
             'kelas', 'tahunAjarans', 'semesters', 'mapels',
-            'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'selectedMapel',
+            'selectedTa', 'selectedSemName', 'selectedSem', 'selectedKelas', 'selectedMapel', 'selectedBulan',
             'students', 'dates', 'attendanceMatrix'
         ));
     }
@@ -628,6 +635,12 @@ class KehadiranController extends Controller
         $selectedSemName = $request->get('semester_name');
         $selectedKelas = $request->get('kelas_id');
         $selectedMapel = $request->get('mata_pelajaran_id');
+        $selectedBulan = $request->get('bulan');
+
+        $bulanLabels = self::BULAN_LABELS;
+        $selectedBulanName = (!empty($selectedBulan) && isset($bulanLabels[(int)$selectedBulan]))
+            ? $bulanLabels[(int)$selectedBulan]
+            : 'Semua Bulan';
 
         $tahunAjaran = TahunAjaran::find($selectedTa);
         $semester = Semester::query()
@@ -669,10 +682,15 @@ class KehadiranController extends Controller
                 ? MataPelajaran::where('nama_mata_pelajaran', $mapelModel->nama_mata_pelajaran)->pluck('id')->toArray()
                 : [$selectedMapel];
 
-            $dates = Kehadiran::query()
+            $datesQuery = Kehadiran::query()
                 ->whereIn('mata_pelajaran_id', $matchingMapelIds)
-                ->whereIn('siswa_id', $siswaIds)
-                ->select('tanggal')
+                ->whereIn('siswa_id', $siswaIds);
+
+            if (!empty($selectedBulan)) {
+                $datesQuery->whereMonth('tanggal', $selectedBulan);
+            }
+
+            $dates = $datesQuery->select('tanggal')
                 ->distinct()
                 ->orderBy('tanggal', 'asc')
                 ->pluck('tanggal')
@@ -700,7 +718,8 @@ class KehadiranController extends Controller
 
         return view('pages.kehadiran.rekap_print', compact(
             'tahunAjaran', 'semester', 'kelasModel', 'mapelModel', 'school',
-            'students', 'dates', 'attendanceMatrix', 'waliKelas', 'selectedSemName'
+            'students', 'dates', 'attendanceMatrix', 'waliKelas', 'selectedSemName',
+            'selectedBulan', 'selectedBulanName'
         ));
     }
 
