@@ -723,6 +723,103 @@ class KehadiranController extends Controller
         ));
     }
 
+    public function rekapKehadiranCatatan(Request $request)
+    {
+        $siswaId = $request->get('siswa_id');
+        $selectedTa = $request->get('tahun_ajaran_id');
+        $selectedSemName = $request->get('semester_name');
+        $selectedKelas = $request->get('kelas_id');
+        $selectedMapel = $request->get('mata_pelajaran_id');
+        $selectedBulan = $request->get('bulan');
+
+        $siswa = Siswa::with('kelas')->findOrFail($siswaId);
+        $tahunAjaran = TahunAjaran::find($selectedTa);
+        $semester = Semester::query()
+            ->where('tahun_ajaran_id', $selectedTa)
+            ->where('nama_semester', $selectedSemName)
+            ->first();
+        
+        $kelasModel = Kelas::find($selectedKelas);
+        $mapelModel = MataPelajaran::find($selectedMapel);
+
+        $bulanLabels = self::BULAN_LABELS;
+        $selectedBulanName = (!empty($selectedBulan) && isset($bulanLabels[(int)$selectedBulan]))
+            ? $bulanLabels[(int)$selectedBulan]
+            : 'Semua Bulan';
+
+        $matchingMapelIds = $mapelModel
+            ? MataPelajaran::where('nama_mata_pelajaran', $mapelModel->nama_mata_pelajaran)->pluck('id')->toArray()
+            : ($selectedMapel ? [$selectedMapel] : []);
+
+        // Fetch attendance records for this student
+        $kehadiranQuery = Kehadiran::query()
+            ->with(['jenisKehadiran', 'mataPelajaran'])
+            ->where('siswa_id', $siswaId)
+            ->whereIn('mata_pelajaran_id', $matchingMapelIds);
+
+        if (!empty($selectedBulan)) {
+            $kehadiranQuery->whereMonth('tanggal', $selectedBulan);
+        }
+
+        $kehadirans = $kehadiranQuery->orderBy('tanggal', 'asc')->get();
+
+        // Fetch CatatanSiswa records for this student
+        $catatanSiswaQuery = \App\Models\CatatanSiswa::query()
+            ->with(['jenisCatatan', 'guru.pegawai'])
+            ->where('siswa_id', $siswaId)
+            ->where('tahun_ajaran_id', $selectedTa);
+
+        if ($semester) {
+            $catatanSiswaQuery->where('semester_id', $semester->id);
+        }
+
+        if (!empty($selectedBulan)) {
+            $catatanSiswaQuery->whereMonth('tanggal', $selectedBulan);
+        }
+
+        $catatanSiswas = $catatanSiswaQuery->orderBy('tanggal', 'asc')->get();
+        $catatanByDate = $catatanSiswas->keyBy(function($item) {
+            return $item->tanggal ? \Carbon\Carbon::parse($item->tanggal)->format('Y-m-d') : '';
+        });
+
+        // Build records list using field keterangan from kehadirans table
+        $records = [];
+        foreach ($kehadirans as $kh) {
+            $tglStr = $kh->tanggal ? \Carbon\Carbon::parse($kh->tanggal)->format('Y-m-d') : '';
+            $catatan = $tglStr ? ($catatanByDate[$tglStr] ?? null) : null;
+
+            // Catatan primarily taken from kehadirans.keterangan
+            $catatanText = !empty($kh->keterangan) ? $kh->keterangan : ($catatan?->isi_catatan ?? null);
+
+            $records[] = (object) [
+                'tanggal' => $kh->tanggal,
+                'jenis_kehadiran' => $kh->jenisKehadiran?->nama_kehadiran ?? 'Hadir',
+                'kode_kehadiran' => $kh->jenisKehadiran?->kode_kehadiran ?? 'H',
+                'keterangan' => $kh->keterangan,
+                'jenis_catatan' => $catatan?->jenisCatatan?->nama_jenis_catatan ?? null,
+                'isi_catatan' => $catatanText,
+                'tindak_lanjut' => $catatan?->tindak_lanjut,
+                'status' => $catatan?->status,
+                'guru' => $catatan?->guru?->pegawai?->nama_pegawai ?? null,
+            ];
+        }
+
+        $counts = [
+            'total' => count($records),
+            'hadir' => $kehadirans->where('jenisKehadiran.nama_kehadiran', 'Hadir')->count(),
+            'sakit' => $kehadirans->where('jenisKehadiran.nama_kehadiran', 'Sakit')->count(),
+            'izin' => $kehadirans->where('jenisKehadiran.nama_kehadiran', 'Izin')->count(),
+            'alpa' => $kehadirans->whereIn('jenisKehadiran.nama_kehadiran', ['Alpa', 'Tanpa Keterangan'])->count(),
+            'catatan' => collect($records)->filter(fn($r) => !empty($r->isi_catatan) || !empty($r->keterangan))->count(),
+        ];
+
+        return view('pages.kehadiran.catatan', compact(
+            'siswa', 'tahunAjaran', 'semester', 'kelasModel', 'mapelModel',
+            'selectedTa', 'selectedSemName', 'selectedKelas', 'selectedMapel', 'selectedBulan', 'selectedBulanName',
+            'records', 'counts'
+        ));
+    }
+
     public function rekapKehadiranPersonal(Request $request)
     {
         $user = auth()->user();

@@ -99,6 +99,7 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::get('kehadiran/rekap', [KehadiranController::class, 'rekapKehadiran'])->name('kehadiran.rekap');
     Route::get('kehadiran/rekap/get-mapel', [KehadiranController::class, 'rekapGetMapel'])->name('kehadiran.rekap.get-mapel');
     Route::get('kehadiran/rekap/print', [KehadiranController::class, 'rekapKehadiranPrint'])->name('kehadiran.rekap.print');
+    Route::get('kehadiran/rekap/catatan', [KehadiranController::class, 'rekapKehadiranCatatan'])->name('kehadiran.rekap.catatan');
     Route::resource('kehadiran', KehadiranController::class);
     Route::get('nilai/export', [NilaiController::class, 'export'])->name('nilai.export');
     Route::post('nilai/import', [NilaiController::class, 'import'])->name('nilai.import');

@@ -133,6 +133,7 @@
                                                 <div class="text-secondary fw-normal" style="font-size: 0.72rem; line-height: 1;">{{ \Carbon\Carbon::parse($d)->locale('id')->isoFormat('MMM') }}</div>
                                             </th>
                                         @endforeach
+                                        <th style="min-width: 140px;">Catatan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -162,6 +163,18 @@
                                                     @endif
                                                 </td>
                                             @endforeach
+                                            <td>
+                                                <a href="{{ route('kehadiran.rekap.catatan', [
+                                                    'siswa_id' => $siswa->id,
+                                                    'tahun_ajaran_id' => $selectedTa,
+                                                    'semester_name' => $selectedSemName,
+                                                    'kelas_id' => $selectedKelas,
+                                                    'mata_pelajaran_id' => $selectedMapel,
+                                                    'bulan' => $selectedBulan
+                                                ]) }}" target="_blank" class="btn btn-sm btn-outline-dark fw-semibold" style="border-radius: 6px; font-size: 0.8rem; padding: 4px 10px; white-space: nowrap;">
+                                                    <i class="bi bi-journal-text me-1"></i> Lihat Catatan
+                                                </a>
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
