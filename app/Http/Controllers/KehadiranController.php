@@ -804,12 +804,13 @@ class KehadiranController extends Controller
             ];
         }
 
+        $alpaNames = ['Alpa', 'Tanpa Keterangan', 'Alpha'];
         $counts = [
             'total' => count($records),
-            'hadir' => $kehadirans->where('jenisKehadiran.nama_kehadiran', 'Hadir')->count(),
-            'sakit' => $kehadirans->where('jenisKehadiran.nama_kehadiran', 'Sakit')->count(),
-            'izin' => $kehadirans->where('jenisKehadiran.nama_kehadiran', 'Izin')->count(),
-            'alpa' => $kehadirans->whereIn('jenisKehadiran.nama_kehadiran', ['Alpa', 'Tanpa Keterangan'])->count(),
+            'hadir' => $kehadirans->filter(fn($k) => strtolower($k->jenisKehadiran?->nama_kehadiran ?? '') === 'hadir')->count(),
+            'sakit' => $kehadirans->filter(fn($k) => strtolower($k->jenisKehadiran?->nama_kehadiran ?? '') === 'sakit')->count(),
+            'izin'  => $kehadirans->filter(fn($k) => strtolower($k->jenisKehadiran?->nama_kehadiran ?? '') === 'izin')->count(),
+            'alpa'  => $kehadirans->filter(fn($k) => in_array(strtolower($k->jenisKehadiran?->nama_kehadiran ?? ''), ['alpa', 'alpha', 'tanpa keterangan']))->count(),
             'catatan' => collect($records)->filter(fn($r) => !empty($r->isi_catatan) || !empty($r->keterangan))->count(),
         ];
 
