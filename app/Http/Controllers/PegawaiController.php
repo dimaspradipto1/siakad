@@ -214,7 +214,10 @@ class PegawaiController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        if (count(array_intersect(array_map('strtolower', $rolesList), ['guru', 'wali kelas'])) > 0) {
+        $hasGuruRole = count(array_intersect(array_map('strtolower', $rolesList), ['guru', 'wali kelas'])) > 0;
+
+        if ($hasGuruRole) {
+            // Role mengandung guru/wali kelas → buat atau perbarui record Guru
             \App\Models\Guru::updateOrCreate([
                 'pegawai_id' => $pegawai->id,
             ], [
@@ -222,6 +225,9 @@ class PegawaiController extends Controller
                 'golongan' => $pegawai->golongan ?: 'Non-ASN',
                 'pendidikan_terakhir' => $pegawai->pendidikan_terakhir ?: 'S1',
             ]);
+        } else {
+            // Role bukan guru/wali kelas → hapus record Guru jika ada
+            \App\Models\Guru::where('pegawai_id', $pegawai->id)->delete();
         }
 
         alert()->html(
