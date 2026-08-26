@@ -67,11 +67,7 @@ class GuruDataTable extends DataTable
             ])
             ->join('pegawais', 'gurus.pegawai_id', '=', 'pegawais.id')
             ->join('users', 'pegawais.user_id', '=', 'users.id')
-            ->where(function($q) {
-                // Hanya tampilkan guru yang role user-nya adalah guru ATAU wali kelas
-                $q->whereRaw('LOWER(users.roles) LIKE ?', ['%guru%'])
-                  ->orWhereRaw('LOWER(users.roles) LIKE ?', ['%wali kelas%']);
-            });
+            ->whereRaw('LOWER(users.roles) LIKE ?', ['%guru%']);
     }
 
     /**

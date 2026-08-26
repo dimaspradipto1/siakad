@@ -94,8 +94,9 @@ class PegawaiController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        // 3. Auto create Guru record if any role is guru or wali kelas
-        if (count(array_intersect(array_map('strtolower', $rolesList), ['guru', 'wali kelas'])) > 0) {
+        // 3. Auto create Guru record hanya jika role mengandung 'guru' secara eksplisit
+        //    (role 'wali kelas' saja TIDAK membuat record di tabel gurus)
+        if (in_array('guru', array_map('strtolower', $rolesList))) {
             \App\Models\Guru::firstOrCreate([
                 'pegawai_id' => $pegawai->id,
             ], [
@@ -214,10 +215,10 @@ class PegawaiController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        $hasGuruRole = count(array_intersect(array_map('strtolower', $rolesList), ['guru', 'wali kelas'])) > 0;
+        $hasGuruRole = in_array('guru', array_map('strtolower', $rolesList));
 
         if ($hasGuruRole) {
-            // Role mengandung guru/wali kelas → buat atau perbarui record Guru
+            // Role mengandung 'guru' → buat atau perbarui record Guru
             \App\Models\Guru::updateOrCreate([
                 'pegawai_id' => $pegawai->id,
             ], [
@@ -226,7 +227,7 @@ class PegawaiController extends Controller
                 'pendidikan_terakhir' => $pegawai->pendidikan_terakhir ?: 'S1',
             ]);
         } else {
-            // Role bukan guru/wali kelas → hapus record Guru jika ada
+            // Role tidak mengandung 'guru' → hapus record Guru jika ada
             \App\Models\Guru::where('pegawai_id', $pegawai->id)->delete();
         }
 
