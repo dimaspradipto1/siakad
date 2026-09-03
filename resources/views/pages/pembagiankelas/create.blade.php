@@ -149,7 +149,40 @@
                 }
             }
 
-            $('#tahun_ajaran_id, #kelas_id').on('change', function() {
+            function updateUnassignedStudents(selectedTa, currentSiswaId) {
+                if (!selectedTa) return;
+                
+                $.ajax({
+                    url: "{{ route('pembagiankelas.get-siswa') }}",
+                    type: "GET",
+                    data: {
+                        tahun_ajaran_id: selectedTa,
+                        current_siswa_id: currentSiswaId || ''
+                    },
+                    dataType: "json",
+                    success: function(students) {
+                        const siswaSelect = $('#siswa_id');
+                        const prevVal = currentSiswaId || siswaSelect.val();
+                        
+                        siswaSelect.empty().append('<option value="" disabled selected>NISN + Nama Siswa</option>');
+                        students.forEach(function(s) {
+                            const isSelected = (prevVal == s.id) ? 'selected' : '';
+                            siswaSelect.append(`<option value="${s.id}" ${isSelected}>${s.nisn} - ${s.nama_siswa}</option>`);
+                        });
+                        
+                        if (siswaSelect.hasClass('select2-hidden-accessible')) {
+                            siswaSelect.trigger('change.select2');
+                        }
+                    }
+                });
+            }
+
+            $('#tahun_ajaran_id').on('change', function() {
+                updateWaliKelas();
+                updateUnassignedStudents($(this).val(), "{{ old('siswa_id') }}");
+            });
+
+            $('#kelas_id').on('change', function() {
                 updateWaliKelas();
             });
 

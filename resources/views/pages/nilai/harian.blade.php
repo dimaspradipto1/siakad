@@ -293,6 +293,85 @@
 @push('script')
 <script>
 $(document).ready(function() {
+    let isUpdatingDropdowns = false;
+
+    function syncKelasAndMapel(changedField) {
+        if (isUpdatingDropdowns) return;
+        isUpdatingDropdowns = true;
+
+        const taId = $('#tahun_ajaran_id').val();
+        const semId = $('#semester_id').val();
+        const kelasId = $('#kelas_id').val();
+        const mapelId = $('#mata_pelajaran_id').val();
+
+        $.ajax({
+            url: "{{ route('nilai.get-kelas-mapel') }}",
+            type: "GET",
+            data: {
+                tahun_ajaran_id: taId,
+                semester_id: semId,
+                kelas_id: changedField === 'kelas' ? kelasId : '',
+                mata_pelajaran_id: changedField === 'mapel' ? mapelId : ''
+            },
+            dataType: "json",
+            success: function(res) {
+                if (changedField === 'ta_sem') {
+                    const kSelect = $('#kelas_id');
+                    const currK = kSelect.val();
+                    kSelect.empty().append('<option value="" disabled selected>-- Pilih Kelas --</option>');
+                    res.kelas.forEach(function(k) {
+                        const sel = (currK == k.id) ? 'selected' : '';
+                        kSelect.append(`<option value="${k.id}" ${sel}>${k.nama_kelas}</option>`);
+                    });
+
+                    const mSelect = $('#mata_pelajaran_id');
+                    const currM = mSelect.val();
+                    mSelect.empty().append('<option value="" disabled selected>-- Pilih Mata Pelajaran --</option>');
+                    res.mapels.forEach(function(m) {
+                        const sel = (currM == m.id) ? 'selected' : '';
+                        mSelect.append(`<option value="${m.id}" ${sel}>${m.nama_mata_pelajaran}</option>`);
+                    });
+                } else if (changedField === 'kelas') {
+                    const mSelect = $('#mata_pelajaran_id');
+                    const currM = mSelect.val();
+                    mSelect.empty().append('<option value="" disabled selected>-- Pilih Mata Pelajaran --</option>');
+                    res.mapels.forEach(function(m) {
+                        const sel = (currM == m.id || res.mapels.length === 1) ? 'selected' : '';
+                        mSelect.append(`<option value="${m.id}" ${sel}>${m.nama_mata_pelajaran}</option>`);
+                    });
+                } else if (changedField === 'mapel') {
+                    const kSelect = $('#kelas_id');
+                    const currK = kSelect.val();
+                    kSelect.empty().append('<option value="" disabled selected>-- Pilih Kelas --</option>');
+                    res.kelas.forEach(function(k) {
+                        const sel = (currK == k.id || res.kelas.length === 1) ? 'selected' : '';
+                        kSelect.append(`<option value="${k.id}" ${sel}>${k.nama_kelas}</option>`);
+                    });
+                }
+                isUpdatingDropdowns = false;
+            },
+            error: function() {
+                isUpdatingDropdowns = false;
+            }
+        });
+    }
+
+    $('#tahun_ajaran_id, #semester_id').on('change', function() {
+        syncKelasAndMapel('ta_sem');
+    });
+
+    $('#kelas_id').on('change', function() {
+        if (!isUpdatingDropdowns) {
+            syncKelasAndMapel('kelas');
+        }
+    });
+
+    $('#mata_pelajaran_id').on('change', function() {
+        if (!isUpdatingDropdowns) {
+            syncKelasAndMapel('mapel');
+        }
+    });
+
     // Recalculate average on input change
     $('.tp-input').on('input', function() {
         const tr = $(this).closest('tr');

@@ -22,12 +22,46 @@ class PembagianKelasController extends Controller
 
     public function create()
     {
-        $siswas = Siswa::orderBy('nama_siswa', 'asc')->get();
+        $activeTa = TahunAjaran::where('status', 'Aktif')->first() ?? TahunAjaran::orderBy('tahun_mulai', 'desc')->first();
+        $selectedTaId = request('tahun_ajaran_id') ?? ($activeTa ? $activeTa->id : null);
+
+        $siswas = Siswa::whereDoesntHave('pembagianKelas', function($q) use ($selectedTaId) {
+            if ($selectedTaId) {
+                $q->where('tahun_ajaran_id', $selectedTaId);
+            }
+        })->orderBy('nama_siswa', 'asc')->get();
+
         $kelas = Kelas::with(['waliKelas.guru.pegawai'])->get();
         $tahunAjarans = TahunAjaran::orderBy('tahun_mulai', 'desc')->get();
         $waliKelasList = \App\Models\WaliKelas::with(['guru.pegawai'])->get();
 
-        return view('pages.pembagiankelas.create', compact('siswas', 'kelas', 'tahunAjarans', 'waliKelasList'));
+        return view('pages.pembagiankelas.create', compact('siswas', 'kelas', 'tahunAjarans', 'waliKelasList', 'selectedTaId'));
+    }
+
+    public function getSiswaByTahunAjaran(Request $request)
+    {
+        $taId = $request->get('tahun_ajaran_id');
+        $currentSiswaId = $request->get('current_siswa_id');
+
+        $query = Siswa::query();
+
+        if ($taId) {
+            $query->where(function($q) use ($taId, $currentSiswaId) {
+                $q->whereDoesntHave('pembagianKelas', function($subQ) use ($taId, $currentSiswaId) {
+                    $subQ->where('tahun_ajaran_id', $taId);
+                    if ($currentSiswaId) {
+                        $subQ->where('siswa_id', '!=', $currentSiswaId);
+                    }
+                });
+                if ($currentSiswaId) {
+                    $q->orWhere('id', $currentSiswaId);
+                }
+            });
+        }
+
+        $siswas = $query->orderBy('nama_siswa', 'asc')->get(['id', 'nisn', 'nama_siswa']);
+
+        return response()->json($siswas);
     }
 
     public function store(PembagianKelasRequest $request)
@@ -57,7 +91,15 @@ class PembagianKelasController extends Controller
     public function edit(PembagianKelas $pembagiankela)
     {
         $pembagiankela->load(['kelas.waliKelas.guru.pegawai', 'siswa']);
-        $siswas = Siswa::orderBy('nama_siswa', 'asc')->get();
+        $taId = $pembagiankela->tahun_ajaran_id;
+        $currentSiswaId = $pembagiankela->siswa_id;
+
+        $siswas = Siswa::where(function($q) use ($taId, $currentSiswaId) {
+            $q->whereDoesntHave('pembagianKelas', function($subQ) use ($taId, $currentSiswaId) {
+                $subQ->where('tahun_ajaran_id', $taId)->where('siswa_id', '!=', $currentSiswaId);
+            })->orWhere('id', $currentSiswaId);
+        })->orderBy('nama_siswa', 'asc')->get();
+
         $kelas = Kelas::with(['waliKelas.guru.pegawai'])->get();
         $tahunAjarans = TahunAjaran::orderBy('tahun_mulai', 'desc')->get();
         $waliKelasList = \App\Models\WaliKelas::with(['guru.pegawai'])->get();

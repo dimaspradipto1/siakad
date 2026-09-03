@@ -100,6 +100,10 @@ class KehadiranController extends Controller
     public function create(Request $request)
     {
         $user = auth()->user();
+        if ($user && in_array($user->roles, ['admin', 'kepala sekolah'])) {
+            return redirect()->route('kehadiran.rekap');
+        }
+
         $isGuru = $user->roles === 'guru';
 
         // 1. Resolve filters

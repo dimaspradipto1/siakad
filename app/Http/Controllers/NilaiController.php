@@ -250,6 +250,10 @@ class NilaiController extends Controller
      * Helper to retrieve available Mata Pelajaran options for grading.
      * Restricts strictly to subjects taught by the teacher when $isGuru is true.
      */
+    /**
+     * Helper to retrieve available Mata Pelajaran options for grading.
+     * Restricts strictly to subjects taught by the teacher when $isGuru is true.
+     */
     private function getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId = null)
     {
         $query = MataPelajaran::query();
@@ -268,6 +272,12 @@ class NilaiController extends Controller
             });
         }
 
+        if ($selectedSem) {
+            $query->where(function($q) use ($selectedSem) {
+                $q->where('semester_id', $selectedSem)->orWhereNull('semester_id');
+            });
+        }
+
         $results = $query->orderBy('nama_mata_pelajaran', 'asc')
             ->get()
             ->unique('nama_mata_pelajaran')
@@ -283,6 +293,110 @@ class NilaiController extends Controller
         }
 
         return $results;
+    }
+
+    /**
+     * Helper to retrieve available Kelas options for grading.
+     * Restricts strictly to classes taught by the teacher when $isGuru is true.
+     */
+    private function getKelasOptions($selectedTa, $selectedSem, $selectedMapel, $isGuru, $guruId = null, $isWali = false, $waliKelasIds = [])
+    {
+        if ($isGuru && $guruId) {
+            $query = MataPelajaran::query()
+                ->where('guru_id', $guruId)
+                ->whereNotNull('kelas_id');
+
+            if ($selectedTa) {
+                $query->where(function($q) use ($selectedTa) {
+                    $q->where('tahun_ajaran_id', $selectedTa)->orWhereNull('tahun_ajaran_id');
+                });
+            }
+            if ($selectedSem) {
+                $query->where(function($q) use ($selectedSem) {
+                    $q->where('semester_id', $selectedSem)->orWhereNull('semester_id');
+                });
+            }
+            if ($selectedMapel) {
+                $selectedMapelObj = MataPelajaran::find($selectedMapel);
+                if ($selectedMapelObj) {
+                    $query->where('nama_mata_pelajaran', $selectedMapelObj->nama_mata_pelajaran);
+                }
+            }
+
+            $kelasIds = $query->pluck('kelas_id')->unique()->toArray();
+
+            if (empty($kelasIds)) {
+                $fallbackQuery = MataPelajaran::query()
+                    ->where('guru_id', $guruId)
+                    ->whereNotNull('kelas_id');
+                if ($selectedMapel) {
+                    $selectedMapelObj = MataPelajaran::find($selectedMapel);
+                    if ($selectedMapelObj) {
+                        $fallbackQuery->where('nama_mata_pelajaran', $selectedMapelObj->nama_mata_pelajaran);
+                    }
+                }
+                $kelasIds = $fallbackQuery->pluck('kelas_id')->unique()->toArray();
+            }
+
+            return !empty($kelasIds)
+                ? Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get()
+                : collect();
+        }
+
+        if ($isWali && !empty($waliKelasIds)) {
+            return Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get();
+        }
+
+        $kelasQuery = Kelas::query();
+        if ($selectedMapel) {
+            $selectedMapelObj = MataPelajaran::find($selectedMapel);
+            if ($selectedMapelObj) {
+                $qMapel = MataPelajaran::query()
+                    ->where('nama_mata_pelajaran', $selectedMapelObj->nama_mata_pelajaran)
+                    ->whereNotNull('kelas_id');
+                if ($selectedTa) {
+                    $qMapel->where(function($q) use ($selectedTa) {
+                        $q->where('tahun_ajaran_id', $selectedTa)->orWhereNull('tahun_ajaran_id');
+                    });
+                }
+                $kIds = $qMapel->pluck('kelas_id')->unique()->toArray();
+                if (!empty($kIds)) {
+                    $kelasQuery->whereIn('id', $kIds);
+                }
+            }
+        }
+
+        return $kelasQuery->orderBy('nama_kelas', 'asc')->get();
+    }
+
+    public function getKelasDanMapel(Request $request)
+    {
+        $taId = $request->get('tahun_ajaran_id');
+        $semId = $request->get('semester_id');
+        $semName = $request->get('semester_name');
+        $kelasId = $request->get('kelas_id');
+        $mapelId = $request->get('mata_pelajaran_id');
+
+        if (!$semId && $taId && $semName) {
+            $semObj = Semester::where('tahun_ajaran_id', $taId)->where('nama_semester', $semName)->first();
+            $semId = $semObj ? $semObj->id : null;
+        }
+
+        $user = auth()->user();
+        $guruId = $this->getGuruId($user);
+        $isAdminOrKepsek = $user && in_array($user->roles, ['admin', 'kepala sekolah']);
+        $isGuru = !$isAdminOrKepsek && !empty($guruId);
+        $waliKelasIds = $this->getWaliKelasIds($user);
+        $activeRole = $user?->activeRole() ?? $user?->roles;
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
+
+        $kelas = $this->getKelasOptions($taId, $semId, $mapelId, $isGuru, $guruId, $isWali, $waliKelasIds);
+        $mapels = $this->getMapelOptions($taId, $semId, $kelasId, $isGuru, $guruId);
+
+        return response()->json([
+            'kelas' => $kelas->map(fn($k) => ['id' => $k->id, 'nama_kelas' => $k->nama_kelas]),
+            'mapels' => $mapels->map(fn($m) => ['id' => $m->id, 'nama_mata_pelajaran' => $m->nama_mata_pelajaran]),
+        ]);
     }
     private function getWaliKelasIds($user): array
     {
@@ -350,24 +464,12 @@ class NilaiController extends Controller
         
         list($selectedTa, $selectedSem, $selectedKelas, $selectedMapel) = $this->resolveFilters($request);
 
-        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
-
         $waliKelasIds = $this->getWaliKelasIds($user);
         $activeRole = $user?->activeRole() ?? $user?->roles;
-        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas' || !empty($waliKelasIds));
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
 
-        if ($isWali) {
-            $kelas = !empty($waliKelasIds)
-                ? Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } elseif ($isGuru) {
-            $kelasIds = MataPelajaran::query()->where('guru_id', $guruId)->whereNotNull('kelas_id')->pluck('kelas_id');
-            $kelas = !empty($kelasIds)
-                ? Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } else {
-            $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
-        }
+        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
+        $kelas = $this->getKelasOptions($selectedTa, $selectedSem, $selectedMapel, $isGuru, $guruId, $isWali, $waliKelasIds);
 
         $tahunAjarans = TahunAjaran::query()->get();
         $semesters = $selectedTa
@@ -514,24 +616,12 @@ class NilaiController extends Controller
         
         list($selectedTa, $selectedSem, $selectedKelas, $selectedMapel) = $this->resolveFilters($request);
 
-        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
-
         $waliKelasIds = $this->getWaliKelasIds($user);
         $activeRole = $user?->activeRole() ?? $user?->roles;
-        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas' || !empty($waliKelasIds));
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
 
-        if ($isWali) {
-            $kelas = !empty($waliKelasIds)
-                ? Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } elseif ($isGuru) {
-            $kelasIds = MataPelajaran::query()->where('guru_id', $guruId)->whereNotNull('kelas_id')->pluck('kelas_id');
-            $kelas = !empty($kelasIds)
-                ? Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } else {
-            $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
-        }
+        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
+        $kelas = $this->getKelasOptions($selectedTa, $selectedSem, $selectedMapel, $isGuru, $guruId, $isWali, $waliKelasIds);
 
         $tahunAjarans = TahunAjaran::query()->get();
         $semesters = $selectedTa
@@ -631,24 +721,12 @@ class NilaiController extends Controller
         
         list($selectedTa, $selectedSem, $selectedKelas, $selectedMapel) = $this->resolveFilters($request);
 
-        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
-
         $waliKelasIds = $this->getWaliKelasIds($user);
         $activeRole = $user?->activeRole() ?? $user?->roles;
-        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas' || !empty($waliKelasIds));
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
 
-        if ($isWali) {
-            $kelas = !empty($waliKelasIds)
-                ? Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } elseif ($isGuru) {
-            $kelasIds = MataPelajaran::query()->where('guru_id', $guruId)->whereNotNull('kelas_id')->pluck('kelas_id');
-            $kelas = !empty($kelasIds)
-                ? Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } else {
-            $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
-        }
+        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
+        $kelas = $this->getKelasOptions($selectedTa, $selectedSem, $selectedMapel, $isGuru, $guruId, $isWali, $waliKelasIds);
 
         $tahunAjarans = TahunAjaran::query()->get();
         $semesters = $selectedTa
@@ -748,24 +826,12 @@ class NilaiController extends Controller
 
         list($selectedTa, $selectedSem, $selectedKelas, $selectedMapel) = $this->resolveFilters($request);
 
-        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
-
         $waliKelasIds = $this->getWaliKelasIds($user);
         $activeRole = $user?->activeRole() ?? $user?->roles;
-        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas' || !empty($waliKelasIds));
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
 
-        if ($isWali) {
-            $kelas = !empty($waliKelasIds)
-                ? Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } elseif ($isGuru) {
-            $kelasIds = MataPelajaran::query()->where('guru_id', $guruId)->whereNotNull('kelas_id')->pluck('kelas_id');
-            $kelas = !empty($kelasIds)
-                ? Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } else {
-            $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
-        }
+        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
+        $kelas = $this->getKelasOptions($selectedTa, $selectedSem, $selectedMapel, $isGuru, $guruId, $isWali, $waliKelasIds);
 
         $tahunAjarans = TahunAjaran::query()->get();
         $semesters = $selectedTa
@@ -1003,26 +1069,12 @@ class NilaiController extends Controller
         $isAdminOrKepsek = $user && in_array($user->roles, ['admin', 'kepala sekolah']);
         $isGuru = !$isAdminOrKepsek && !empty($guruId);
 
-        list($selectedTa, $selectedSem, $selectedKelas, $selectedMapel) = $this->resolveFilters($request);
-
-        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
-
         $waliKelasIds = $this->getWaliKelasIds($user);
         $activeRole = $user?->activeRole() ?? $user?->roles;
-        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas' || !empty($waliKelasIds));
+        $isWali = $user && ($user->roles === 'wali kelas' || $activeRole === 'wali kelas');
 
-        if ($isWali) {
-            $kelas = !empty($waliKelasIds)
-                ? Kelas::query()->whereIn('id', $waliKelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } elseif ($isGuru) {
-            $kelasIds = MataPelajaran::query()->where('guru_id', $guruId)->whereNotNull('kelas_id')->pluck('kelas_id');
-            $kelas = !empty($kelasIds)
-                ? Kelas::query()->whereIn('id', $kelasIds)->orderBy('nama_kelas', 'asc')->get()
-                : collect();
-        } else {
-            $kelas = Kelas::query()->orderBy('nama_kelas', 'asc')->get();
-        }
+        $mapels = $this->getMapelOptions($selectedTa, $selectedSem, $selectedKelas, $isGuru, $guruId);
+        $kelas = $this->getKelasOptions($selectedTa, $selectedSem, $selectedMapel, $isGuru, $guruId, $isWali, $waliKelasIds);
 
         $tahunAjarans = TahunAjaran::query()->get();
         $semesters = $selectedTa

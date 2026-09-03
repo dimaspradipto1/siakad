@@ -134,6 +134,7 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     // Penguncian Nilai (admin only)
     Route::post('nilai/lock/toggle', [NilaiController::class, 'lockToggle'])->name('nilai.lock.toggle');
 
+    Route::get('nilai/get-kelas-mapel', [NilaiController::class, 'getKelasDanMapel'])->name('nilai.get-kelas-mapel');
     Route::get('nilai/raport/personal', [NilaiController::class, 'cetakRaportPersonal'])->name('nilai.raport.personal');
     Route::get('kehadiran/personal', [KehadiranController::class, 'rekapKehadiranPersonal'])->name('kehadiran.personal');
     Route::get('ekstrakurikuler-personal', [EkstrakurikulerController::class, 'rekapEkskulPersonal'])->name('ekstrakurikuler.personal');
@@ -145,6 +146,7 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::resource('pengumuman', PengumumanController::class);
     Route::resource('profil-sekolah', ProfilSekolahController::class);
     Route::resource('jabatan', JabatanController::class);
+    Route::get('pembagiankelas/get-siswa', [PembagianKelasController::class, 'getSiswaByTahunAjaran'])->name('pembagiankelas.get-siswa');
     Route::resource('pembagiankelas', PembagianKelasController::class);
     Route::get('materipembelajaran/{id}/download', [MateriPembelajaranController::class, 'download'])->name('materipembelajaran.download');
     Route::resource('materipembelajaran', MateriPembelajaranController::class);
