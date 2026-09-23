@@ -48,7 +48,9 @@
             justify-content: center;
             background: linear-gradient(135deg, #0d2a6e 0%, #1a4fad 40%, #1e6fb5 70%, #0d9fd8 100%);
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 40px 20px;
         }
 
         /* Animated background blobs */
@@ -84,9 +86,10 @@
         .login-wrapper {
             width: 100%;
             max-width: 460px;
-            padding: 20px;
+            padding: 10px 10px 40px;
             position: relative;
             z-index: 1;
+            margin: auto;
         }
 
         /* Logo / Brand */
@@ -140,6 +143,7 @@
             padding: 40px 36px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
             animation: slideUp 0.6s ease-out 0.1s both;
+            margin-bottom: 24px;
         }
 
         @keyframes slideUp {
@@ -268,26 +272,6 @@
             color: #1a4fad;
         }
 
-        /* Remember me */
-        .remember-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 24px;
-        }
-
-        .remember-row input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: #1a4fad;
-            cursor: pointer;
-        }
-
-        .remember-row label {
-            font-size: 13px;
-            color: #6b7280;
-            cursor: pointer;
-        }
 
         /* Submit button */
         .btn-login {
@@ -371,13 +355,27 @@
 
         .role-badge {
             background: rgba(255, 255, 255, 0.15);
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.9);
             font-size: 11px;
             font-weight: 500;
-            padding: 4px 10px;
+            padding: 5px 12px;
             border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.25);
             backdrop-filter: blur(4px);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .role-badge:hover {
+            background: rgba(255, 255, 255, 0.32);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
         }
     </style>
 </head>
@@ -462,11 +460,6 @@
                     @enderror
                 </div>
 
-                <!-- Remember me -->
-                <div class="remember-row">
-                    <input type="checkbox" id="remember" name="remember" value="1">
-                    <label for="remember">Ingat saya</label>
-                </div>
 
                 <!-- Submit -->
                 <button type="submit" class="btn-login" id="btnLogin">
@@ -482,15 +475,28 @@
             </div>
         </div>
 
-        <!-- Role info strip -->
-        <div class="roles-strip">
-            <span class="role-badge"><i class="bi bi-shield-check"></i> Admin</span>
-            <span class="role-badge"><i class="bi bi-person-badge"></i> Guru</span>
-            <span class="role-badge"><i class="bi bi-people"></i> Wali Kelas</span>
-            <span class="role-badge"><i class="bi bi-building"></i> Kepala Sekolah</span>
-            <span class="role-badge"><i class="bi bi-person"></i> Siswa</span>
-            <span class="role-badge"><i class="bi bi-heart"></i> Orang Tua</span>
-        </div>
+        <!-- Role info / Panduan G-Drive strip -->
+        @if(isset($panduans) && $panduans->count() > 0)
+            <div class="roles-strip">
+                @foreach($panduans as $p)
+                    <a href="{{ $p->link_gdrive ?: '#' }}" 
+                       {{ $p->link_gdrive ? 'target="_blank" rel="noopener noreferrer"' : '' }} 
+                       class="role-badge" 
+                       title="{{ $p->judul ?: ('Buka Link G-Drive ' . $p->role) }}">
+                        <i class="{{ $p->icon ?: 'bi bi-journal-text' }}"></i> {{ $p->role }}
+                    </a>
+                @endforeach
+            </div>
+        @else
+            <div class="roles-strip">
+                <span class="role-badge"><i class="bi bi-shield-check"></i> Admin</span>
+                <span class="role-badge"><i class="bi bi-person-badge"></i> Guru</span>
+                <span class="role-badge"><i class="bi bi-people"></i> Wali Kelas</span>
+                <span class="role-badge"><i class="bi bi-building"></i> Kepala Sekolah</span>
+                <span class="role-badge"><i class="bi bi-person"></i> Siswa</span>
+                <span class="role-badge"><i class="bi bi-heart"></i> Orang Tua</span>
+            </div>
+        @endif
 
     </div>
 

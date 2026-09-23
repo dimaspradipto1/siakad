@@ -141,6 +141,12 @@
         </a>
       </li>
 
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('panduan.*') ? '' : 'collapsed' }}" href="{{ route('panduan.index') }}">
+          <i class="bi bi-journal-bookmark"></i><span>Panduan Aplikasi</span>
+        </a>
+      </li>
+
       {{-- 4. AKADEMIK & NILAI SISWA --}}
       <li class="nav-heading">Akademik & Nilai</li>
 

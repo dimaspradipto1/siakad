@@ -25,6 +25,7 @@ use App\Http\Controllers\ProfilSekolahController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\PembagianKelasController;
 use App\Http\Controllers\MateriPembelajaranController;
+use App\Http\Controllers\PanduanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -150,4 +151,5 @@ Route::middleware(['auth', 'checkrole'])->group(function () {
     Route::resource('pembagiankelas', PembagianKelasController::class);
     Route::get('materipembelajaran/{id}/download', [MateriPembelajaranController::class, 'download'])->name('materipembelajaran.download');
     Route::resource('materipembelajaran', MateriPembelajaranController::class);
+    Route::resource('panduan', PanduanController::class);
 });

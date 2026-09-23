@@ -20,7 +20,9 @@ class AuthController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return view('layouts.auth.login');
+        $panduans = \App\Models\Panduan::where('is_active', true)->orderBy('urutan', 'asc')->get();
+
+        return view('layouts.auth.login', compact('panduans'));
     }
 
     /**

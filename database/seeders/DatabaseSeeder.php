@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
            JenisCatatanSeeder::class,
            CatatanSiswaSeeder::class,
            PengumumanSeeder::class,
+           PanduanSeeder::class,
        ]);
     }
 }
